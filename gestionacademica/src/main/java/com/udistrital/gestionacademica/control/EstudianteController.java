@@ -2,8 +2,6 @@ package com.udistrital.gestionacademica.control;
 
 import com.udistrital.gestionacademica.modelo.Estudiante;
 import com.udistrital.gestionacademica.servicio.EstudianteService;
-// import com.udistrital.gestionacademica.servicio.EstudianteService.EstadisticasDTO;
-//import com.udistrital.gestionacademica.dto.FiltroEstudianteDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -12,7 +10,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.List;
-
 import java.util.Map;
 
 @RestController
@@ -24,9 +21,6 @@ public class EstudianteController {
 
     private final EstudianteService estudianteService;
 
-    /**
-     * Obtiene todos los estudiantes GET /api/estudiantes
-     */
     @GetMapping
     public ResponseEntity<?> obtenerTodosLosEstudiantes() {
         try {
@@ -40,8 +34,38 @@ public class EstudianteController {
         }
     }
 
+    @PostMapping("/{codigoEstudiante}/asignar-grupo/{idGrupo}")
+    public ResponseEntity<?> asignarEstudianteAGrupo(
+            @PathVariable Long codigoEstudiante,
+            @PathVariable Long idGrupo) {
+        try {
+            log.info("Asignando estudiante {} al grupo {}", codigoEstudiante, idGrupo);
+            
+            Estudiante estudianteActualizado = estudianteService.asignarEstudianteAGrupo(
+                    codigoEstudiante, 
+                    idGrupo
+            );
+            
+            return ResponseEntity.ok(crearRespuestaExito(
+                    "Estudiante asignado exitosamente", 
+                    estudianteActualizado
+            ));
+            
+        } catch (RuntimeException e) {
+            log.error("Error al asignar estudiante: {}", e.getMessage());
+            
+            if ("GRUPO_COMPLETO".equals(e.getMessage())) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(crearRespuestaError("Grupo completo"));
+            }
+            
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
 
-    // Métodos auxiliares para respuestas
     private Map<String, Object> crearRespuestaError(String mensaje) {
         Map<String, Object> response = new HashMap<>();
         response.put("error", true);
@@ -49,5 +73,11 @@ public class EstudianteController {
         return response;
     }
 
-
+    private Map<String, Object> crearRespuestaExito(String mensaje, Object data) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("error", false);
+        response.put("mensaje", mensaje);
+        response.put("data", data);
+        return response;
+    }
 }

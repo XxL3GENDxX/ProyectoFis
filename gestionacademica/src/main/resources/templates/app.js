@@ -1,16 +1,18 @@
 // Configuración de la API
 const API_URL = 'http://localhost:8080/api/estudiantes';
+const API_GRADOS_URL = 'http://localhost:8080/api/grados';
+const API_GRUPOS_URL = 'http://localhost:8080/api/grupos';
 
 // Estado global
 let modoGestionGrupo = false;
 let estudiantesData = [];
 let timeoutBusqueda = null;
+let estudianteSeleccionado = null;
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     inicializarEventos();
     cargarEstudiantes();
-    cargarEstadisticas();
 });
 
 // Inicializar eventos
@@ -34,6 +36,12 @@ function inicializarEventos() {
 
     // Modo gestión de grupos
     document.getElementById('btn-gestionar-grupo-mode').addEventListener('click', toggleModoGestionGrupo);
+
+    // Evento para cambio de grado en modal de asignación
+    document.getElementById('select-grado-asignar').addEventListener('change', cargarGruposPorGrado);
+
+    // Evento para confirmar asignación
+    document.getElementById('btn-confirmar-asignar').addEventListener('click', confirmarAsignacion);
 }
 
 // Cargar todos los estudiantes
@@ -61,7 +69,24 @@ async function cargarEstudiantes() {
     }
 }
 
-
+// Búsqueda de estudiantes
+function buscarEstudiantes(texto) {
+    if (!texto) {
+        mostrarTabla(estudiantesData);
+        return;
+    }
+    
+    const textoLower = texto.toLowerCase();
+    const filtrados = estudiantesData.filter(est => {
+        return est.nombre.toLowerCase().includes(textoLower) ||
+               est.apellido.toLowerCase().includes(textoLower) ||
+               (est.documento && est.documento.toLowerCase().includes(textoLower)) ||
+               (est.grupo && est.grupo.grado && est.grupo.grado.nombreGrado.toLowerCase().includes(textoLower)) ||
+               (est.grupo && est.grupo.numeroGrupo && est.grupo.numeroGrupo.toString().includes(textoLower));
+    });
+    
+    mostrarTabla(filtrados);
+}
 
 // Aplicar filtros avanzados
 async function aplicarFiltros() {
@@ -76,7 +101,26 @@ async function aplicarFiltros() {
         ordenAlfabetico: document.getElementById('filtro-orden').value === 'true'
     };
     
-
+    // Aplicar filtros localmente
+    let filtrados = [...estudiantesData];
+    
+    if (filtro.genero) {
+        filtrados = filtrados.filter(est => est.genero === filtro.genero);
+    }
+    
+    if (filtro.edadMinima || filtro.edadMaxima) {
+        filtrados = filtrados.filter(est => {
+            const edad = est.calcularEdad ? est.calcularEdad() : null;
+            if (!edad) return false;
+            
+            if (filtro.edadMinima && edad < filtro.edadMinima) return false;
+            if (filtro.edadMaxima && edad > filtro.edadMaxima) return false;
+            
+            return true;
+        });
+    }
+    
+    mostrarTabla(filtrados);
 }
 
 // Limpiar filtros
@@ -132,12 +176,15 @@ function mostrarTabla(estudiantes) {
         const tr = document.createElement('tr');
         
         const estadoClass = estudiante.estado === 'Activo' ? 'estado-activo' : 'estado-inactivo';
-        const grupoTexto = estudiante.grupo || 'Sin grupo';
+        const grupoTexto = estudiante.grupo ? 
+            `${estudiante.grupo.grado.nombreGrado} - Grupo ${estudiante.grupo.numeroGrupo}` : 
+            'Sin grupo';
+        const gradoTexto = estudiante.grupo ? estudiante.grupo.grado.nombreGrado : 'N/A';
         
         tr.innerHTML = `
             <td>${estudiante.nombre}</td>
             <td>${estudiante.apellido}</td>
-            <td>${estudiante.grado || 'N/A'}</td>
+            <td>${gradoTexto}</td>
             <td>${grupoTexto}</td>
             <td><span class="estado-badge ${estadoClass}">${estudiante.estado}</span></td>
             <td>
@@ -176,34 +223,133 @@ function generarBotonesOpciones(estudiante) {
     }
 }
 
+// Asignar grupo (modo gestión)
+async function asignarGrupo(codigoEstudiante) {
+    estudianteSeleccionado = codigoEstudiante;
+    
+    // Cargar grados en el modal
+    await cargarGradosEnModal();
+    
+    // Abrir modal de asignación
+    abrirModal('modal-asignar-grupo');
+}
+
+// Cargar grados en el modal
+async function cargarGradosEnModal() {
+    try {
+        const response = await fetch(API_GRADOS_URL);
+        
+        if (!response.ok) {
+            throw new Error('Error al cargar grados');
+        }
+        
+        const grados = await response.json();
+        const select = document.getElementById('select-grado-asignar');
+        
+        select.innerHTML = '<option value="">Seleccione un grado</option>';
+        
+        grados.forEach(grado => {
+            const option = document.createElement('option');
+            option.value = grado.idGrado;
+            option.textContent = grado.nombreGrado;
+            select.appendChild(option);
+        });
+        
+        // Limpiar select de grupos
+        document.getElementById('select-grupo-asignar').innerHTML = '<option value="">Primero seleccione un grado</option>';
+        
+    } catch (error) {
+        console.error('Error al cargar grados:', error);
+        mostrarMensaje('Error', 'Error al cargar los grados disponibles', 'error');
+    }
+}
+
+// Cargar grupos por grado
+async function cargarGruposPorGrado() {
+    const idGrado = document.getElementById('select-grado-asignar').value;
+    const selectGrupo = document.getElementById('select-grupo-asignar');
+    
+    if (!idGrado) {
+        selectGrupo.innerHTML = '<option value="">Primero seleccione un grado</option>';
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_GRUPOS_URL}/grado/${idGrado}`);
+        
+        if (!response.ok) {
+            throw new Error('Error al cargar grupos');
+        }
+        
+        const grupos = await response.json();
+        
+        selectGrupo.innerHTML = '<option value="">Seleccione un grupo</option>';
+        
+        grupos.forEach(grupo => {
+            const option = document.createElement('option');
+            option.value = grupo.idGrupo;
+            option.textContent = `Grupo ${grupo.numeroGrupo} (${grupo.numeroEstudiantes || 0}/${grupo.limiteEstudiantes} estudiantes)`;
+            selectGrupo.appendChild(option);
+        });
+        
+    } catch (error) {
+        console.error('Error al cargar grupos:', error);
+        mostrarMensaje('Error', 'Error al cargar los grupos disponibles', 'error');
+    }
+}
+
+// Confirmar asignación
+async function confirmarAsignacion() {
+    const idGrado = document.getElementById('select-grado-asignar').value;
+    const idGrupo = document.getElementById('select-grupo-asignar').value;
+    
+    if (!idGrado || !idGrupo) {
+        mostrarMensaje('Información', 'Por favor seleccione un grado y un grupo', 'info');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/${estudianteSeleccionado}/asignar-grupo/${idGrupo}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            cerrarModal('modal-asignar-grupo');
+            mostrarMensaje('Éxito', 'Estudiante asignado exitosamente', 'success');
+            cargarEstudiantes();
+        } else {
+            if (data.mensaje === 'Grupo completo') {
+                mostrarMensaje('Advertencia', 'Grupo completo', 'warning');
+            } else {
+                mostrarMensaje('Error', data.mensaje || 'Error en la base de datos', 'error');
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error al asignar estudiante:', error);
+        mostrarMensaje('Error', 'Error en la base de datos', 'error');
+    }
+}
+
 // Editar estudiante
 function editarEstudiante(codigoEstudiante) {
-    // Esta funcionalidad sería implementada en otro caso de uso
     mostrarMensaje('Información', 'La funcionalidad de editar estudiante se implementará en el caso de uso correspondiente', 'info');
 }
 
 // Confirmar eliminación
 function confirmarEliminar(codigoEstudiante, nombreCompleto) {
-        mostrarMensaje('Información', 'La funcionalidad de eliminar estudiante se implementará en el caso de uso correspondiente', 'info');
-
-}
-
-// Eliminar estudiante
-async function eliminarEstudiante(codigoEstudiante) {
-            mostrarMensaje('Información', 'La funcionalidad de eliminar estudiante se implementará en el caso de uso correspondiente', 'info');
-}
-
-
-// Asignar grupo (modo gestión)
-async function asignarGrupo(codigoEstudiante) {
-     mostrarMensaje('Información', 'La funcionalidad de asignar grupo se implementará en el caso de uso correspondiente', 'info');
+    mostrarMensaje('Información', 'La funcionalidad de eliminar estudiante se implementará en el caso de uso correspondiente', 'info');
 }
 
 // Desvincular grupo
 async function desvincularGrupo(codigoEstudiante) {
-        mostrarMensaje('Información', 'La funcionalidad de desvincular grupo se implementará en el caso de uso correspondiente', 'info');
+    mostrarMensaje('Información', 'La funcionalidad de desvincular grupo se implementará en el caso de uso correspondiente', 'info');
 }
-
 
 // Funciones de UI
 function mostrarLoading() {
@@ -252,6 +398,8 @@ function mostrarMensaje(titulo, mensaje, tipo) {
         icono.classList.add('success', 'fas', 'fa-check-circle');
     } else if (tipo === 'error') {
         icono.classList.add('error', 'fas', 'fa-exclamation-circle');
+    } else if (tipo === 'warning') {
+        icono.classList.add('warning', 'fas', 'fa-exclamation-triangle');
     } else {
         icono.classList.add('fas', 'fa-info-circle');
     }

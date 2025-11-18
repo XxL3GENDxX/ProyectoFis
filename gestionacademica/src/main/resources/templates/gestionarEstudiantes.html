@@ -5,6 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Estudiantes</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .modal-icon.warning {
+            color: var(--warning-color);
+        }
+    </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -77,7 +94,6 @@
                 </div>
             </section>
 
-
             <!-- Tabla de estudiantes -->
             <section class="table-section">
                 <div class="table-header">
@@ -134,6 +150,35 @@
         </main>
     </div>
 
+    <!-- Modal para asignar estudiante a grupo -->
+    <div class="modal" id="modal-asignar-grupo">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-plus"></i> Asignar Estudiante a Grupo</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="select-grado-asignar">Grado</label>
+                    <select id="select-grado-asignar" class="filter-select">
+                        <option value="">Seleccione un grado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="select-grupo-asignar">Grupo</label>
+                    <select id="select-grupo-asignar" class="filter-select">
+                        <option value="">Primero seleccione un grado</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-asignar-grupo')">Cancelar</button>
+                <button class="btn btn-success" id="btn-confirmar-asignar">
+                    <i class="fas fa-check"></i> Asignar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para confirmar eliminación -->
     <div class="modal" id="modal-eliminar">
         <div class="modal-content">
@@ -151,7 +196,7 @@
         </div>
     </div>
 
-    <!-- Modal para mensaje de éxito/error -->
+    <!-- Modal para mensaje de éxito/error/advertencia -->
     <div class="modal" id="modal-mensaje">
         <div class="modal-content modal-small">
             <div class="modal-body text-center">

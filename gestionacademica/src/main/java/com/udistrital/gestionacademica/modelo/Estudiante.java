@@ -21,9 +21,6 @@ public class Estudiante {
     @Column(name = "id_acudiente")
     private Long idAcudiente;
 
-    @Column(name = "id_grupo")
-    private Long idGrupo;
-
     @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;
 
@@ -33,8 +30,10 @@ public class Estudiante {
     @Column(name = "documento", unique = true, length = 20)
     private String documento;
 
-    @Column(name = "grupo", length = 50)
-    private String grupo;
+    // REFACTORIZADO: Cambio de String a Grupo
+    @ManyToOne
+    @JoinColumn(name = "id_grupo")
+    private Grupo grupo;
 
     @Column(name = "estado", nullable = false, length = 20)
     private String estado = "Activo";
@@ -51,5 +50,13 @@ public class Estudiante {
             return null;
         }
         return LocalDateTime.now().getYear() - fechaNacimiento.getYear();
+    }
+
+    // Método auxiliar para obtener el nombre del grupo
+    public String getNombreGrupo() {
+        if (grupo == null) {
+            return "Sin grupo";
+        }
+        return grupo.getGrado().getNombreGrado() + " - Grupo " + grupo.getNumeroGrupo();
     }
 }
