@@ -637,3 +637,90 @@ body {
         margin: 20px;
     }
 }
+
+/* Agregar estos estilos al final de styles.css */
+
+/* Modal tamaño medio para formularios */
+.modal-medium {
+    max-width: 600px;
+}
+
+/* Estilos para el formulario de modificación */
+.form-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: all 0.3s;
+    font-family: inherit;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.form-input:invalid:not(:placeholder-shown) {
+    border-color: var(--danger-color);
+}
+
+.form-input:valid:not(:placeholder-shown) {
+    border-color: var(--success-color);
+}
+
+/* Campos obligatorios */
+.campo-obligatorio {
+    color: var(--danger-color);
+    font-weight: bold;
+}
+
+/* Texto de ayuda en formularios */
+.form-help {
+    display: block;
+    margin-top: 5px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* Nota informativa en formularios */
+.form-note {
+    background-color: #e0f2fe;
+    border-left: 4px solid var(--primary-color);
+    padding: 12px;
+    margin-top: 15px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.form-note i {
+    color: var(--primary-color);
+    margin-right: 8px;
+}
+
+/* Validación visual de campos */
+.form-group.has-error .form-input {
+    border-color: var(--danger-color);
+}
+
+.form-group.has-error .form-help {
+    color: var(--danger-color);
+}
+
+.form-group.has-success .form-input {
+    border-color: var(--success-color);
+}
+
+/* Responsive para modales de formulario */
+@media (max-width: 768px) {
+    .modal-medium {
+        width: 95%;
+        max-width: none;
+    }
+    
+    .form-input {
+        font-size: 16px; /* Evita zoom en iOS */
+    }
+}

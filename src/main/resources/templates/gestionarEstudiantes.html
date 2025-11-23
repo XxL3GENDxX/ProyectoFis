@@ -199,6 +199,68 @@
         </div>
     </div>
 
+    <!-- Modal para modificar estudiante -->
+    <!-- Agregar este código en gestionarEstudiantes.html después del modal de desvinculación -->
+
+    <div class="modal" id="modal-modificar-estudiante">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Modificar Estudiante</h2>
+            </div>
+            <div class="modal-body">
+                <form id="form-modificar-estudiante" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="modificar-nombre">
+                            Nombre <span class="campo-obligatorio">*</span>
+                        </label>
+                        <input type="text" id="modificar-nombre" class="form-input" placeholder="Ingrese el nombre"
+                            required maxlength="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modificar-apellido">
+                            Apellido <span class="campo-obligatorio">*</span>
+                        </label>
+                        <input type="text" id="modificar-apellido" class="form-input" placeholder="Ingrese el apellido"
+                            required maxlength="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modificar-documento">
+                            Documento <span class="campo-obligatorio">*</span>
+                        </label>
+                        <input type="text" id="modificar-documento" class="form-input"
+                            placeholder="Ingrese el número de documento" required pattern="[0-9]{6,20}"
+                            title="El documento debe contener entre 6 y 20 dígitos" maxlength="20">
+                        <small class="form-help">Solo números, entre 6 y 20 dígitos</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modificar-fecha-nacimiento">
+                            Fecha de Nacimiento
+                        </label>
+                        <input type="date" id="modificar-fecha-nacimiento" class="form-input"
+                            max="<?php echo date('Y-m-d'); ?>">
+                        <small class="form-help">Formato: DD/MM/AAAA</small>
+                    </div>
+
+                    <div class="form-note">
+                        <i class="fas fa-info-circle"></i>
+                        Los campos marcados con <span class="campo-obligatorio">*</span> son obligatorios
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-modificar-estudiante')">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" id="btn-confirmar-modificar">
+                    <i class="fas fa-save"></i> Modificar estudiante
+                </button>
+            </div>
+        </div>
+    </div>
+
 
     <!-- Modal para mensaje de éxito/error/advertencia -->
     <div class="modal" id="modal-mensaje">

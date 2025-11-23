@@ -46,6 +46,8 @@ function inicializarEventos() {
     
     // Evento para confirmar desvinculación - NUEVO
     document.getElementById('btn-confirmar-desvincular').addEventListener('click', confirmarDesvinculacion);
+
+    document.getElementById('btn-confirmar-modificar').addEventListener('click', confirmarModificacion);
 }
 
 // Cargar todos los estudiantes
@@ -406,6 +408,133 @@ async function confirmarDesvinculacion() {
         estudianteADesvincular = null;
     }
 }
+
+/**
+ * NUEVA FUNCIONALIDAD - Modificar estudiante
+ * Paso 1: El actor selecciona la opción "Modificar estudiante"
+ * @param {number} codigoEstudiante - Código del estudiante a modificar
+ */
+async function editarEstudiante(codigoEstudiante) {
+    try {
+        // Obtener los datos actuales del estudiante
+        const response = await fetch(`${API_URL}/${codigoEstudiante}`);
+        
+        if (!response.ok) {
+            throw new Error('Error al cargar datos del estudiante');
+        }
+        
+        const estudiante = await response.json();
+        
+        // Paso 2: El sistema despliega campos con los datos actuales
+        cargarDatosEnFormularioModificar(estudiante);
+        
+        // Guardar el código del estudiante para la actualización
+        estudianteSeleccionado = codigoEstudiante;
+        
+        // Abrir modal de modificación
+        abrirModal('modal-modificar-estudiante');
+        
+    } catch (error) {
+        console.error('Error al cargar estudiante:', error);
+        mostrarMensaje('Error', 'Error al cargar los datos del estudiante', 'error');
+    }
+}
+
+/**
+ * Cargar los datos del estudiante en el formulario de modificación
+ * Paso 2: Despliega campos con opciones para modificar
+ */
+function cargarDatosEnFormularioModificar(estudiante) {
+    document.getElementById('modificar-nombre').value = estudiante.nombre || '';
+    document.getElementById('modificar-apellido').value = estudiante.apellido || '';
+    document.getElementById('modificar-documento').value = estudiante.documento || '';
+    
+    // Formatear fecha de nacimiento para el input date (YYYY-MM-DD)
+    if (estudiante.fechaNacimiento) {
+        const fecha = new Date(estudiante.fechaNacimiento);
+        const fechaFormateada = fecha.toISOString().split('T')[0];
+        document.getElementById('modificar-fecha-nacimiento').value = fechaFormateada;
+    } else {
+        document.getElementById('modificar-fecha-nacimiento').value = '';
+    }
+}
+
+/**
+ * Confirmar modificación del estudiante
+ * Paso 4-7: El actor confirma y el sistema valida y guarda los cambios
+ */
+async function confirmarModificacion() {
+    // Paso 3: Obtener datos modificados del formulario
+    const nombre = document.getElementById('modificar-nombre').value.trim();
+    const apellido = document.getElementById('modificar-apellido').value.trim();
+    const documento = document.getElementById('modificar-documento').value.trim();
+    const fechaNacimientoStr = document.getElementById('modificar-fecha-nacimiento').value;
+    
+    // Validación básica en el cliente (el servidor también validará)
+    if (!nombre || !apellido || !documento) {
+        mostrarMensaje('Advertencia', 'Por favor complete todos los campos obligatorios', 'warning');
+        return;
+    }
+    
+    // Preparar objeto con datos modificados
+    const estudianteModificado = {
+        nombre: nombre,
+        apellido: apellido,
+        documento: documento
+    };
+    
+    // Agregar fecha de nacimiento si se proporcionó
+    if (fechaNacimientoStr) {
+        // Convertir a formato LocalDateTime para el backend
+        const fecha = new Date(fechaNacimientoStr);
+        estudianteModificado.fechaNacimiento = fecha.toISOString();
+    }
+    
+    try {
+        // Paso 4-7: Enviar datos modificados al servidor
+        const response = await fetch(`${API_URL}/${estudianteSeleccionado}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(estudianteModificado)
+        });
+        
+        const data = await response.json();
+        
+        // Cerrar modal
+        cerrarModal('modal-modificar-estudiante');
+        
+        if (response.ok) {
+            // Paso 8: Mensaje de éxito
+            mostrarMensaje('Éxito', 'Estudiante modificado exitosamente', 'success');
+            // Recargar la tabla de estudiantes
+            cargarEstudiantes();
+        } else {
+            // Flujos alternativos
+            if (response.status === 400) {
+                // Flujo alternativo A: Datos inválidos
+                mostrarMensaje('Advertencia', data.mensaje || 'Datos ingresados no válidos', 'warning');
+                // Reabrir el modal para que el usuario corrija
+                setTimeout(() => abrirModal('modal-modificar-estudiante'), 500);
+            } else if (response.status === 409) {
+                // Flujo alternativo B: Documento duplicado
+                mostrarMensaje('Advertencia', 'Ya existe un registro con este documento', 'warning');
+                // Reabrir el modal para que el usuario corrija
+                setTimeout(() => abrirModal('modal-modificar-estudiante'), 500);
+            } else {
+                // Flujo alternativo C: Error en la base de datos
+                mostrarMensaje('Error', data.mensaje || 'Error en la base de datos', 'error');
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error al modificar estudiante:', error);
+        cerrarModal('modal-modificar-estudiante');
+        mostrarMensaje('Error', 'Error en la base de datos', 'error');
+    }
+}
+
 
 // Funciones de UI
 function mostrarLoading() {
