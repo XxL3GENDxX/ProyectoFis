@@ -8,7 +8,7 @@ let modoGestionGrupo = false;
 let estudiantesData = [];
 let timeoutBusqueda = null;
 let estudianteSeleccionado = null;
-let estudianteADesvincular = null; // Variable para almacenar el estudiante a desvincular
+let estudianteADesvincular = null;
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
@@ -18,7 +18,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Inicializar eventos
 function inicializarEventos() {
-    // Búsqueda en tiempo real
     document.getElementById('txt-buscar-estudiante').addEventListener('input', function(e) {
         clearTimeout(timeoutBusqueda);
         timeoutBusqueda = setTimeout(() => {
@@ -26,27 +25,13 @@ function inicializarEventos() {
         }, 300);
     });
 
-    // Toggle filtros
     document.getElementById('btn-toggle-filtros').addEventListener('click', toggleFiltros);
-
-    // Aplicar filtros
     document.getElementById('btn-aplicar-filtros').addEventListener('click', aplicarFiltros);
-
-    // Limpiar filtros
     document.getElementById('btn-limpiar-filtros').addEventListener('click', limpiarFiltros);
-
-    // Modo gestión de grupos
     document.getElementById('btn-gestionar-grupo-mode').addEventListener('click', toggleModoGestionGrupo);
-
-    // Evento para cambio de grado en modal de asignación
     document.getElementById('select-grado-asignar').addEventListener('change', cargarGruposPorGrado);
-
-    // Evento para confirmar asignación
     document.getElementById('btn-confirmar-asignar').addEventListener('click', confirmarAsignacion);
-    
-    // Evento para confirmar desvinculación - NUEVO
     document.getElementById('btn-confirmar-desvincular').addEventListener('click', confirmarDesvinculacion);
-
     document.getElementById('btn-confirmar-modificar').addEventListener('click', confirmarModificacion);
 }
 
@@ -147,7 +132,6 @@ function toggleModoGestionGrupo() {
         thOpciones.textContent = 'Opciones';
     }
     
-    // Recargar tabla con las opciones correctas
     mostrarTabla(estudiantesData);
 }
 
@@ -187,23 +171,21 @@ function mostrarTabla(estudiantes) {
 }
 
 // Generar botones de opciones según el modo
-
 function generarBotonesOpciones(estudiante) {
+    const esActivo = estudiante.estado === 'Activo';
+    
     if (modoGestionGrupo) {
-        // Verificar si el estudiante tiene grupo asignado
         const tieneGrupo = estudiante.grupo !== null && estudiante.grupo !== undefined;
         
-        // Botón asignar: habilitado solo si NO tiene grupo
-        const btnAsignarClass = tieneGrupo ? 'btn btn-success btn-icon disabled' : 'btn btn-success btn-icon';
-        const btnAsignarDisabled = tieneGrupo ? 'disabled' : '';
-        const btnAsignarTitle = tieneGrupo ? 'El estudiante ya tiene grupo asignado' : 'Asignar a grupo';
-        const btnAsignarOnclick = tieneGrupo ? '' : `onclick="asignarGrupo(${estudiante.codigoEstudiante})"`;
+        const btnAsignarClass = !esActivo || tieneGrupo ? 'btn btn-success btn-icon disabled' : 'btn btn-success btn-icon';
+        const btnAsignarDisabled = !esActivo || tieneGrupo ? 'disabled' : '';
+        const btnAsignarTitle = !esActivo ? 'Estudiante inactivo' : (tieneGrupo ? 'El estudiante ya tiene grupo asignado' : 'Asignar a grupo');
+        const btnAsignarOnclick = !esActivo || tieneGrupo ? '' : `onclick="asignarGrupo(${estudiante.codigoEstudiante})"`;
         
-        // Botón desvincular: habilitado solo si tiene grupo
-        const btnDesvincularClass = !tieneGrupo ? 'btn btn-danger btn-icon disabled' : 'btn btn-danger btn-icon';
-        const btnDesvincularDisabled = !tieneGrupo ? 'disabled' : '';
-        const btnDesvincularTitle = !tieneGrupo ? 'El estudiante no tiene grupo asignado' : 'Desvincular de grupo';
-        const btnDesvincularOnclick = !tieneGrupo ? '' : `onclick="desvincularGrupo(${estudiante.codigoEstudiante}, '${estudiante.nombre} ${estudiante.apellido}')"`;
+        const btnDesvincularClass = !esActivo || !tieneGrupo ? 'btn btn-danger btn-icon disabled' : 'btn btn-danger btn-icon';
+        const btnDesvincularDisabled = !esActivo || !tieneGrupo ? 'disabled' : '';
+        const btnDesvincularTitle = !esActivo ? 'Estudiante inactivo' : (!tieneGrupo ? 'El estudiante no tiene grupo asignado' : 'Desvincular de grupo');
+        const btnDesvincularOnclick = !esActivo || !tieneGrupo ? '' : `onclick="desvincularGrupo(${estudiante.codigoEstudiante}, '${estudiante.nombre} ${estudiante.apellido}')"`;
         
         return `
             <button class="${btnAsignarClass}" ${btnAsignarOnclick} title="${btnAsignarTitle}" ${btnAsignarDisabled}>
@@ -214,25 +196,102 @@ function generarBotonesOpciones(estudiante) {
             </button>
         `;
     } else {
+        // Modo normal: Editar, Eliminar y Switch de Estado
+        const switchChecked = esActivo ? 'checked' : '';
+        const btnEditarClass = !esActivo ? 'btn btn-primary btn-icon disabled' : 'btn btn-primary btn-icon';
+        const btnEditarDisabled = !esActivo ? 'disabled' : '';
+        const btnEditarOnclick = !esActivo ? '' : `onclick="editarEstudiante(${estudiante.codigoEstudiante})"`;
+        const btnEditarTitle = !esActivo ? 'Estudiante inactivo' : 'Editar';
+        
         return `
-            <button class="btn btn-primary btn-icon" onclick="editarEstudiante(${estudiante.codigoEstudiante})" title="Editar">
+            <button class="${btnEditarClass}" ${btnEditarOnclick} title="${btnEditarTitle}" ${btnEditarDisabled}>
                 <i class="fas fa-edit"></i>
             </button>
-            <button class="btn btn-danger btn-icon" onclick="confirmarEliminar(${estudiante.codigoEstudiante}, '${estudiante.nombre} ${estudiante.apellido}')" title="Eliminar">
-                <i class="fas fa-trash"></i>
-            </button>
+            <label class="switch-estado" title="Gestionar estado del estudiante">
+                <input type="checkbox" ${switchChecked} onchange="cambiarEstadoEstudiante(${estudiante.codigoEstudiante}, '${estudiante.nombre} ${estudiante.apellido}')">
+                <span class="slider"></span>
+            </label>
         `;
     }
+}
+
+/**
+ * Cambiar estado del estudiante (Activo/Inactivo)
+ * Paso 1: El actor selecciona la opción "Gestionar estado del estudiante"
+ * Paso 2: El sistema muestra mensaje de confirmación
+ */
+function cambiarEstadoEstudiante(codigoEstudiante, nombreCompleto) {
+    // Guardar datos para la confirmación
+    estudianteSeleccionado = codigoEstudiante;
+    
+    // Actualizar nombre en el modal
+    document.getElementById('nombre-estudiante-estado').textContent = nombreCompleto;
+    
+    // Paso 2: Mostrar mensaje de confirmación
+    abrirModal('modal-confirmar-cambio-estado');
+}
+
+/**
+ * Confirmar cambio de estado
+ * Paso 4-14: El actor confirma y el sistema cambia el estado
+ */
+async function confirmarCambioEstado() {
+    if (!estudianteSeleccionado) {
+        return;
+    }
+    
+    try {
+        // Paso 5-11: Solicitar cambio de estado al backend
+        const response = await fetch(`${API_URL}/${estudianteSeleccionado}/cambiar-estado`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        // Cerrar modal de confirmación
+        cerrarModal('modal-confirmar-cambio-estado');
+        
+        if (response.ok) {
+            // Paso 8/12: Mostrar mensaje de éxito
+            mostrarMensaje('Éxito', 'Estado modificado exitosamente', 'success');
+            // Recargar tabla
+            cargarEstudiantes();
+        } else {
+            // Flujo alternativo: Error en la base de datos
+            mostrarMensaje('Error', data.mensaje || 'Error en la base de datos', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error al cambiar estado:', error);
+        cerrarModal('modal-confirmar-cambio-estado');
+        mostrarMensaje('Error', 'Error en la base de datos', 'error');
+    } finally {
+        estudianteSeleccionado = null;
+    }
+}
+
+/**
+ * Cancelar cambio de estado
+ * Paso 3 - Flujo alternativo: El actor cancela la operación
+ */
+function cancelarCambioEstado() {
+    // Restaurar el estado del switch
+    const estudiante = estudiantesData.find(e => e.codigoEstudiante === estudianteSeleccionado);
+    if (estudiante) {
+        cargarEstudiantes();
+    }
+    
+    cerrarModal('modal-confirmar-cambio-estado');
+    estudianteSeleccionado = null;
 }
 
 // Asignar grupo (modo gestión)
 async function asignarGrupo(codigoEstudiante) {
     estudianteSeleccionado = codigoEstudiante;
-    
-    // Cargar grados en el modal
     await cargarGradosEnModal();
-    
-    // Abrir modal de asignación
     abrirModal('modal-asignar-grupo');
 }
 
@@ -257,7 +316,6 @@ async function cargarGradosEnModal() {
             select.appendChild(option);
         });
         
-        // Limpiar select de grupos
         document.getElementById('select-grupo-asignar').innerHTML = '<option value="">Primero seleccione un grado</option>';
         
     } catch (error) {
@@ -339,84 +397,8 @@ async function confirmarAsignacion() {
 }
 
 // Editar estudiante
-function editarEstudiante(codigoEstudiante) {
-    mostrarMensaje('Información', 'La funcionalidad de editar estudiante se implementará en el caso de uso correspondiente', 'info');
-}
-
-// Confirmar eliminación
-function confirmarEliminar(codigoEstudiante, nombreCompleto) {
-    mostrarMensaje('Información', 'La funcionalidad de eliminar estudiante se implementará en el caso de uso correspondiente', 'info');
-}
-
-/**
- * NUEVA FUNCIONALIDAD - Desvincular grupo
- * Paso 1-2 del diagrama: El actor selecciona desvincular y el sistema muestra confirmación
- * @param {number} codigoEstudiante - Código del estudiante
- * @param {string} nombreCompleto - Nombre completo del estudiante
- */
-function desvincularGrupo(codigoEstudiante, nombreCompleto) {
-    // Guardar el código del estudiante para usar en la confirmación
-    estudianteADesvincular = codigoEstudiante;
-    
-    // Actualizar el nombre del estudiante en el modal
-    document.getElementById('nombre-estudiante-desvincular').textContent = nombreCompleto;
-    
-    // Paso 2: Mostrar modal de confirmación
-    abrirModal('modal-desvincular');
-}
-
-/**
- * NUEVA FUNCIONALIDAD - Confirmar desvinculación
- * Paso 4-5 del diagrama: El actor confirma y el sistema desvincula
- */
-async function confirmarDesvinculacion() {
-    if (!estudianteADesvincular) {
-        return;
-    }
-    
-    try {
-        // Paso 5: Desvincular al estudiante del grupo
-        const response = await fetch(`${API_URL}/${estudianteADesvincular}/desvincular-grupo`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        const data = await response.json();
-        
-        // Cerrar modal de confirmación
-        cerrarModal('modal-desvincular');
-        
-        if (response.ok) {
-            // Paso 6: Mostrar mensaje de éxito
-            mostrarMensaje('Éxito', 'Estudiante desvinculado satisfactoriamente', 'success');
-            // Recargar la tabla de estudiantes
-            cargarEstudiantes();
-        } else {
-            // Flujo alternativo: Error en la base de datos
-            mostrarMensaje('Error', data.mensaje || 'Error en la base de datos', 'error');
-        }
-        
-    } catch (error) {
-        console.error('Error al desvincular estudiante:', error);
-        cerrarModal('modal-desvincular');
-        // Flujo alternativo: Error en la base de datos
-        mostrarMensaje('Error', 'Error en la base de datos', 'error');
-    } finally {
-        // Limpiar variable temporal
-        estudianteADesvincular = null;
-    }
-}
-
-/**
- * NUEVA FUNCIONALIDAD - Modificar estudiante
- * Paso 1: El actor selecciona la opción "Modificar estudiante"
- * @param {number} codigoEstudiante - Código del estudiante a modificar
- */
 async function editarEstudiante(codigoEstudiante) {
     try {
-        // Obtener los datos actuales del estudiante
         const response = await fetch(`${API_URL}/${codigoEstudiante}`);
         
         if (!response.ok) {
@@ -424,14 +406,8 @@ async function editarEstudiante(codigoEstudiante) {
         }
         
         const estudiante = await response.json();
-        
-        // Paso 2: El sistema despliega campos con los datos actuales
         cargarDatosEnFormularioModificar(estudiante);
-        
-        // Guardar el código del estudiante para la actualización
         estudianteSeleccionado = codigoEstudiante;
-        
-        // Abrir modal de modificación
         abrirModal('modal-modificar-estudiante');
         
     } catch (error) {
@@ -440,16 +416,11 @@ async function editarEstudiante(codigoEstudiante) {
     }
 }
 
-/**
- * Cargar los datos del estudiante en el formulario de modificación
- * Paso 2: Despliega campos con opciones para modificar
- */
 function cargarDatosEnFormularioModificar(estudiante) {
     document.getElementById('modificar-nombre').value = estudiante.nombre || '';
     document.getElementById('modificar-apellido').value = estudiante.apellido || '';
     document.getElementById('modificar-documento').value = estudiante.documento || '';
     
-    // Formatear fecha de nacimiento para el input date (YYYY-MM-DD)
     if (estudiante.fechaNacimiento) {
         const fecha = new Date(estudiante.fechaNacimiento);
         const fechaFormateada = fecha.toISOString().split('T')[0];
@@ -459,39 +430,29 @@ function cargarDatosEnFormularioModificar(estudiante) {
     }
 }
 
-/**
- * Confirmar modificación del estudiante
- * Paso 4-7: El actor confirma y el sistema valida y guarda los cambios
- */
 async function confirmarModificacion() {
-    // Paso 3: Obtener datos modificados del formulario
     const nombre = document.getElementById('modificar-nombre').value.trim();
     const apellido = document.getElementById('modificar-apellido').value.trim();
     const documento = document.getElementById('modificar-documento').value.trim();
     const fechaNacimientoStr = document.getElementById('modificar-fecha-nacimiento').value;
     
-    // Validación básica en el cliente (el servidor también validará)
     if (!nombre || !apellido || !documento) {
         mostrarMensaje('Advertencia', 'Por favor complete todos los campos obligatorios', 'warning');
         return;
     }
     
-    // Preparar objeto con datos modificados
     const estudianteModificado = {
         nombre: nombre,
         apellido: apellido,
         documento: documento
     };
     
-    // Agregar fecha de nacimiento si se proporcionó
     if (fechaNacimientoStr) {
-        // Convertir a formato LocalDateTime para el backend
         const fecha = new Date(fechaNacimientoStr);
         estudianteModificado.fechaNacimiento = fecha.toISOString();
     }
     
     try {
-        // Paso 4-7: Enviar datos modificados al servidor
         const response = await fetch(`${API_URL}/${estudianteSeleccionado}`, {
             method: 'PUT',
             headers: {
@@ -501,29 +462,19 @@ async function confirmarModificacion() {
         });
         
         const data = await response.json();
-        
-        // Cerrar modal
         cerrarModal('modal-modificar-estudiante');
         
         if (response.ok) {
-            // Paso 8: Mensaje de éxito
             mostrarMensaje('Éxito', 'Estudiante modificado exitosamente', 'success');
-            // Recargar la tabla de estudiantes
             cargarEstudiantes();
         } else {
-            // Flujos alternativos
             if (response.status === 400) {
-                // Flujo alternativo A: Datos inválidos
                 mostrarMensaje('Advertencia', data.mensaje || 'Datos ingresados no válidos', 'warning');
-                // Reabrir el modal para que el usuario corrija
                 setTimeout(() => abrirModal('modal-modificar-estudiante'), 500);
             } else if (response.status === 409) {
-                // Flujo alternativo B: Documento duplicado
                 mostrarMensaje('Advertencia', 'Ya existe un registro con este documento', 'warning');
-                // Reabrir el modal para que el usuario corrija
                 setTimeout(() => abrirModal('modal-modificar-estudiante'), 500);
             } else {
-                // Flujo alternativo C: Error en la base de datos
                 mostrarMensaje('Error', data.mensaje || 'Error en la base de datos', 'error');
             }
         }
@@ -535,6 +486,43 @@ async function confirmarModificacion() {
     }
 }
 
+function desvincularGrupo(codigoEstudiante, nombreCompleto) {
+    estudianteADesvincular = codigoEstudiante;
+    document.getElementById('nombre-estudiante-desvincular').textContent = nombreCompleto;
+    abrirModal('modal-desvincular');
+}
+
+async function confirmarDesvinculacion() {
+    if (!estudianteADesvincular) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/${estudianteADesvincular}/desvincular-grupo`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        cerrarModal('modal-desvincular');
+        
+        if (response.ok) {
+            mostrarMensaje('Éxito', 'Estudiante desvinculado satisfactoriamente', 'success');
+            cargarEstudiantes();
+        } else {
+            mostrarMensaje('Error', data.mensaje || 'Error en la base de datos', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error al desvincular estudiante:', error);
+        cerrarModal('modal-desvincular');
+        mostrarMensaje('Error', 'Error en la base de datos', 'error');
+    } finally {
+        estudianteADesvincular = null;
+    }
+}
 
 // Funciones de UI
 function mostrarLoading() {
@@ -559,7 +547,6 @@ function ocultarTodosLosEstados() {
     document.getElementById('error-state').style.display = 'none';
 }
 
-// Funciones de modal
 function abrirModal(idModal) {
     document.getElementById(idModal).classList.add('show');
 }
@@ -577,7 +564,6 @@ function mostrarMensaje(titulo, mensaje, tipo) {
     tituloEl.textContent = titulo;
     textoEl.textContent = mensaje;
     
-    // Configurar icono según tipo
     icono.className = 'modal-icon';
     if (tipo === 'success') {
         icono.classList.add('success', 'fas', 'fa-check-circle');
@@ -592,7 +578,6 @@ function mostrarMensaje(titulo, mensaje, tipo) {
     abrirModal('modal-mensaje');
 }
 
-// Cerrar modal al hacer clic fuera
 window.onclick = function(event) {
     if (event.target.classList.contains('modal')) {
         event.target.classList.remove('show');

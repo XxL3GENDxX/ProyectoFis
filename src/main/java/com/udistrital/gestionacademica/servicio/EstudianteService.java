@@ -89,34 +89,21 @@ public class EstudianteService {
         }
     }
 
-    /**
-     * Modificar estudiante existente
-     * Implementa el flujo principal del diagrama "Modificar Estudiante"
-     * 
-     * @param codigoEstudiante Código del estudiante a modificar
-     * @param estudianteModificado Datos modificados del estudiante
-     * @return Estudiante modificado
-     * @throws RuntimeException con mensajes específicos según la validación
-     */
     public Estudiante modificarEstudiante(Long codigoEstudiante, Estudiante estudianteModificado) {
         log.info("Modificando estudiante con código: {}", codigoEstudiante);
         
         try {
-            // Obtener el estudiante existente
             Estudiante estudianteExistente = estudianteRepository.findById(codigoEstudiante)
                     .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
             
-            // Paso 5: Validar datos ingresados, campos obligatorios y formato
             validarDatosEstudiante(estudianteModificado);
             
-            // Paso 6: Validar si el documento ya existe en otro estudiante
             if (estudianteModificado.getDocumento() != null && 
                 !estudianteModificado.getDocumento().isEmpty()) {
                 
                 Optional<Estudiante> estudianteConDocumento = 
                     estudianteRepository.findByDocumento(estudianteModificado.getDocumento());
                 
-                // Verificar que el documento no pertenezca a otro estudiante
                 if (estudianteConDocumento.isPresent() && 
                     !estudianteConDocumento.get().getCodigoEstudiante().equals(codigoEstudiante)) {
                     log.warn("El documento {} ya existe en otro estudiante", 
@@ -125,7 +112,6 @@ public class EstudianteService {
                 }
             }
             
-            // Paso 7: Guardar los cambios realizados
             actualizarDatosEstudiante(estudianteExistente, estudianteModificado);
             Estudiante estudianteActualizado = estudianteRepository.save(estudianteExistente);
             
@@ -142,28 +128,21 @@ public class EstudianteService {
         }
     }
     
-    /**
-     * Valida los datos del estudiante
-     * Implementa el paso 5 del diagrama: validación de campos obligatorios y formato
-     */
     private void validarDatosEstudiante(Estudiante estudiante) {
         StringBuilder errores = new StringBuilder();
         
-        // Validar nombre (obligatorio)
         if (estudiante.getNombre() == null || estudiante.getNombre().trim().isEmpty()) {
             errores.append("El nombre es obligatorio. ");
         } else if (estudiante.getNombre().trim().length() < 2) {
             errores.append("El nombre debe tener al menos 2 caracteres. ");
         }
         
-        // Validar apellido (obligatorio)
         if (estudiante.getApellido() == null || estudiante.getApellido().trim().isEmpty()) {
             errores.append("El apellido es obligatorio. ");
         } else if (estudiante.getApellido().trim().length() < 2) {
             errores.append("El apellido debe tener al menos 2 caracteres. ");
         }
         
-        // Validar documento (obligatorio y formato)
         if (estudiante.getDocumento() == null || estudiante.getDocumento().trim().isEmpty()) {
             errores.append("El documento es obligatorio. ");
         } else if (!estudiante.getDocumento().matches("\\d+")) {
@@ -173,35 +152,78 @@ public class EstudianteService {
             errores.append("El documento debe tener entre 6 y 20 dígitos. ");
         }
         
-        // Si hay errores, lanzar excepción
         if (errores.length() > 0) {
             log.warn("Datos inválidos: {}", errores.toString());
             throw new RuntimeException("DATOS_INVALIDOS: " + errores.toString().trim());
         }
     }
     
-    /**
-     * Actualiza los datos del estudiante existente con los nuevos valores
-     */
     private void actualizarDatosEstudiante(Estudiante existente, Estudiante modificado) {
         existente.setNombre(modificado.getNombre().trim());
         existente.setApellido(modificado.getApellido().trim());
         existente.setDocumento(modificado.getDocumento().trim());
         
-        // Actualizar fecha de nacimiento si se proporciona
         if (modificado.getFechaNacimiento() != null) {
             existente.setFechaNacimiento(modificado.getFechaNacimiento());
         }
     }
     
-    /**
-     * Obtener un estudiante por código
-     * Necesario para cargar los datos en el formulario de modificación
-     */
     @Transactional(readOnly = true)
     public Estudiante obtenerEstudiantePorCodigo(Long codigoEstudiante) {
         log.info("Obteniendo estudiante con código: {}", codigoEstudiante);
         return estudianteRepository.findById(codigoEstudiante)
                 .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+    }
+
+    /**
+     * Cambiar estado del estudiante (Activo <-> Inactivo)
+     * Implementa el caso de uso "Gestionar Estado del Estudiante"
+     * 
+     * Paso 5: Consulta el estado del estudiante
+     * Paso 6: Verifica el estado actual
+     * Paso 7/11: Actualiza el estado según corresponda
+     * 
+     * @param codigoEstudiante Código del estudiante
+     * @return Estudiante con estado actualizado
+     * @throws RuntimeException si ocurre un error en la base de datos
+     */
+    public Estudiante cambiarEstadoEstudiante(Long codigoEstudiante) {
+        log.info("Cambiando estado del estudiante con código: {}", codigoEstudiante);
+        
+        try {
+            // Paso 5: Consulta el estado del estudiante
+            Estudiante estudiante = estudianteRepository.findById(codigoEstudiante)
+                    .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+            
+            String estadoActual = estudiante.getEstado();
+            log.info("Estado actual del estudiante {}: {}", codigoEstudiante, estadoActual);
+            
+            // Paso 6: Verifica el estado actual del estudiante
+            if ("Inactivo".equalsIgnoreCase(estadoActual)) {
+                // Paso 7: Actualiza el estado del estudiante como activo
+                estudiante.setEstado("Activo");
+                log.info("Cambiando estado a Activo para estudiante {}", codigoEstudiante);
+            } else {
+                // Paso 11: Actualiza el estado del estudiante como inactivo
+                estudiante.setEstado("Inactivo");
+                log.info("Cambiando estado a Inactivo para estudiante {}", codigoEstudiante);
+            }
+            
+            // Guardar cambios
+            Estudiante estudianteActualizado = estudianteRepository.save(estudiante);
+            
+            log.info("Estado del estudiante {} actualizado exitosamente a: {}", 
+                    codigoEstudiante, estudianteActualizado.getEstado());
+            
+            return estudianteActualizado;
+            
+        } catch (RuntimeException e) {
+            if ("Estudiante no encontrado".equals(e.getMessage())) {
+                throw e;
+            }
+            // Flujo alternativo: Error en la base de datos
+            log.error("Error al cambiar estado del estudiante: {}", e.getMessage());
+            throw new RuntimeException("Error en la base de datos", e);
+        }
     }
 }

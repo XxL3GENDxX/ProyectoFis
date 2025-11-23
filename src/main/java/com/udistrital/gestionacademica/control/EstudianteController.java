@@ -34,10 +34,6 @@ public class EstudianteController {
         }
     }
     
-    /**
-     * Obtener un estudiante por código
-     * Paso 2: El sistema despliega campos con los datos actuales
-     */
     @GetMapping("/{codigoEstudiante}")
     public ResponseEntity<?> obtenerEstudiantePorCodigo(@PathVariable Long codigoEstudiante) {
         try {
@@ -111,14 +107,6 @@ public class EstudianteController {
         }
     }
     
-    /**
-     * Modificar estudiante existente
-     * Implementa el caso de uso "Modificar Estudiante"
-     * 
-     * @param codigoEstudiante Código del estudiante a modificar
-     * @param estudiante Datos modificados del estudiante
-     * @return ResponseEntity con el resultado de la operación
-     */
     @PutMapping("/{codigoEstudiante}")
     public ResponseEntity<?> modificarEstudiante(
             @PathVariable Long codigoEstudiante,
@@ -126,13 +114,11 @@ public class EstudianteController {
         try {
             log.info("Modificando estudiante con código: {}", codigoEstudiante);
             
-            // Paso 7: El sistema guarda los cambios
             Estudiante estudianteActualizado = estudianteService.modificarEstudiante(
                     codigoEstudiante, 
                     estudiante
             );
             
-            // Paso 8: Mensaje de éxito
             return ResponseEntity.ok(crearRespuestaExito(
                     "Estudiante modificado exitosamente", 
                     estudianteActualizado
@@ -141,7 +127,6 @@ public class EstudianteController {
         } catch (RuntimeException e) {
             log.error("Error al modificar estudiante: {}", e.getMessage());
             
-            // Flujo alternativo A: Datos inválidos
             if (e.getMessage().startsWith("DATOS_INVALIDOS")) {
                 String detalleError = e.getMessage().replace("DATOS_INVALIDOS: ", "");
                 return ResponseEntity
@@ -149,14 +134,41 @@ public class EstudianteController {
                         .body(crearRespuestaError("Datos ingresados no válidos: " + detalleError));
             }
             
-            // Flujo alternativo B: Documento duplicado
             if ("DOCUMENTO_DUPLICADO".equals(e.getMessage())) {
                 return ResponseEntity
                         .status(HttpStatus.CONFLICT)
                         .body(crearRespuestaError("Ya existe un registro con este documento"));
             }
             
-            // Flujo alternativo C: Error en la base de datos
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
+
+    /**
+     * Gestionar estado del estudiante (Activo/Inactivo)
+     * Implementa el caso de uso "Gestionar Estado del Estudiante"
+     * Paso 5-11: Consulta el estado actual y actualiza según corresponda
+     */
+    @PatchMapping("/{codigoEstudiante}/cambiar-estado")
+    public ResponseEntity<?> cambiarEstadoEstudiante(@PathVariable Long codigoEstudiante) {
+        try {
+            log.info("Cambiando estado del estudiante con código: {}", codigoEstudiante);
+            
+            // Paso 5-11: El servicio consulta el estado y lo actualiza
+            Estudiante estudianteActualizado = estudianteService.cambiarEstadoEstudiante(codigoEstudiante);
+            
+            // Paso 8/12: Mensaje de éxito
+            return ResponseEntity.ok(crearRespuestaExito(
+                    "Estado modificado exitosamente", 
+                    estudianteActualizado
+            ));
+            
+        } catch (RuntimeException e) {
+            log.error("Error al cambiar estado del estudiante: {}", e.getMessage());
+            
+            // Flujo alternativo: Error en la base de datos
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(crearRespuestaError("Error en la base de datos"));
