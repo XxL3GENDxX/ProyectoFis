@@ -185,13 +185,29 @@ function mostrarTabla(estudiantes) {
 }
 
 // Generar botones de opciones según el modo
+
 function generarBotonesOpciones(estudiante) {
     if (modoGestionGrupo) {
+        // Verificar si el estudiante tiene grupo asignado
+        const tieneGrupo = estudiante.grupo !== null && estudiante.grupo !== undefined;
+        
+        // Botón asignar: habilitado solo si NO tiene grupo
+        const btnAsignarClass = tieneGrupo ? 'btn btn-success btn-icon disabled' : 'btn btn-success btn-icon';
+        const btnAsignarDisabled = tieneGrupo ? 'disabled' : '';
+        const btnAsignarTitle = tieneGrupo ? 'El estudiante ya tiene grupo asignado' : 'Asignar a grupo';
+        const btnAsignarOnclick = tieneGrupo ? '' : `onclick="asignarGrupo(${estudiante.codigoEstudiante})"`;
+        
+        // Botón desvincular: habilitado solo si tiene grupo
+        const btnDesvincularClass = !tieneGrupo ? 'btn btn-danger btn-icon disabled' : 'btn btn-danger btn-icon';
+        const btnDesvincularDisabled = !tieneGrupo ? 'disabled' : '';
+        const btnDesvincularTitle = !tieneGrupo ? 'El estudiante no tiene grupo asignado' : 'Desvincular de grupo';
+        const btnDesvincularOnclick = !tieneGrupo ? '' : `onclick="desvincularGrupo(${estudiante.codigoEstudiante}, '${estudiante.nombre} ${estudiante.apellido}')"`;
+        
         return `
-            <button class="btn btn-success btn-icon" onclick="asignarGrupo(${estudiante.codigoEstudiante})" title="Asignar a grupo">
+            <button class="${btnAsignarClass}" ${btnAsignarOnclick} title="${btnAsignarTitle}" ${btnAsignarDisabled}>
                 <i class="fas fa-check"></i>
             </button>
-            <button class="btn btn-danger btn-icon" onclick="desvincularGrupo(${estudiante.codigoEstudiante}, '${estudiante.nombre} ${estudiante.apellido}')" title="Desvincular de grupo">
+            <button class="${btnDesvincularClass}" ${btnDesvincularOnclick} title="${btnDesvincularTitle}" ${btnDesvincularDisabled}>
                 <i class="fas fa-times"></i>
             </button>
         `;
