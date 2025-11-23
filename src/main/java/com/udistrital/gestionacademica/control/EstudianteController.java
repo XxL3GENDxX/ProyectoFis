@@ -40,47 +40,26 @@ public class EstudianteController {
             @PathVariable Long idGrupo) {
         try {
             log.info("Asignando estudiante {} al grupo {}", codigoEstudiante, idGrupo);
-
+            
             Estudiante estudianteActualizado = estudianteService.asignarEstudianteAGrupo(
-                    codigoEstudiante,
+                    codigoEstudiante, 
                     idGrupo
             );
-
+            
             return ResponseEntity.ok(crearRespuestaExito(
-                    "Estudiante asignado exitosamente",
+                    "Estudiante asignado exitosamente", 
                     estudianteActualizado
             ));
-
+            
         } catch (RuntimeException e) {
             log.error("Error al asignar estudiante: {}", e.getMessage());
-
+            
             if ("GRUPO_COMPLETO".equals(e.getMessage())) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
                         .body(crearRespuestaError("Grupo completo"));
             }
-
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(crearRespuestaError("Error en la base de datos"));
-        }
-    }
-
-    @DeleteMapping("/{codigoEstudiante}/desvincular-grupo")
-    public ResponseEntity<?> desvincularEstudianteDeGrupo(@PathVariable Long codigoEstudiante) {
-        try {
-            log.info("Desvinculando estudiante {} del grupo", codigoEstudiante);
-
-            Estudiante estudianteActualizado = estudianteService.desvincularEstudianteDeGrupo(codigoEstudiante);
-
-            return ResponseEntity.ok(crearRespuestaExito(
-                    "Estudiante desvinculado satisfactoriamente",
-                    estudianteActualizado
-            ));
-
-        } catch (RuntimeException e) {
-            log.error("Error al desvincular estudiante: {}", e.getMessage());
-
+            
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(crearRespuestaError("Error en la base de datos"));

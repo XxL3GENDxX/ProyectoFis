@@ -10,10 +10,10 @@ import java.util.Optional;
 
 @Repository
 public interface GrupoRepository extends JpaRepository<Grupo, Long> {
-
+    
     @Query("SELECT g FROM Grupo g WHERE g.grado.idGrado = :idGrado ORDER BY g.numeroGrupo")
     List<Grupo> findByGradoId(@Param("idGrado") Long idGrado);
-
+    
     @Query("SELECT g FROM Grupo g WHERE g.grado.idGrado = :idGrado AND g.numeroGrupo = :numeroGrupo")
     Optional<Grupo> findByGradoIdAndNumeroGrupo(@Param("idGrado") Long idGrado, @Param("numeroGrupo") Integer numeroGrupo);
 }

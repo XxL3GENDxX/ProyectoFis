@@ -1,4 +1,3 @@
-
 package com.udistrital.gestionacademica.servicio;
 
 import com.udistrital.gestionacademica.modelo.Estudiante;
@@ -10,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-
 
 @Service
 @Transactional
@@ -32,13 +30,7 @@ public class EstudianteService {
         }
     }
 
-    @Transactional(readOnly = true)
-    public Estudiante obtenerEstudiantePorId(Long codigoEstudiante) {
-        log.info("Obteniendo estudiante con código: {}", codigoEstudiante);
-        return estudianteRepository.findById(codigoEstudiante)
-                .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
-    }
-
+    
     public Estudiante asignarEstudianteAGrupo(Long codigoEstudiante, Long idGrupo) {
         log.info("Asignando estudiante {} al grupo {}", codigoEstudiante, idGrupo);
         
@@ -71,29 +63,6 @@ public class EstudianteService {
                 throw e;
             }
             log.error("Error al asignar estudiante al grupo: {}", e.getMessage());
-            throw new RuntimeException("Error en la base de datos", e);
-        }
-    }
-
-    public Estudiante desvincularEstudianteDeGrupo(Long codigoEstudiante) {
-        log.info("Desvinculando estudiante {} del grupo", codigoEstudiante);
-        
-        try {
-            // Obtener el estudiante
-            Estudiante estudiante = estudianteRepository.findById(codigoEstudiante)
-                    .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
-            
-            // Desvincular el grupo (establecer a null)
-            estudiante.setGrupo(null);
-            
-            // Guardar el estudiante
-            Estudiante estudianteActualizado = estudianteRepository.save(estudiante);
-            
-            log.info("Estudiante {} desvinculado exitosamente del grupo", codigoEstudiante);
-            return estudianteActualizado;
-            
-        } catch (Exception e) {
-            log.error("Error al desvincular estudiante del grupo: {}", e.getMessage());
             throw new RuntimeException("Error en la base de datos", e);
         }
     }

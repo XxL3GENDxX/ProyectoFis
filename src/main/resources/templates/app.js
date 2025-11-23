@@ -101,26 +101,6 @@ async function aplicarFiltros() {
         ordenAlfabetico: document.getElementById('filtro-orden').value === 'true'
     };
     
-    // Aplicar filtros localmente
-    let filtrados = [...estudiantesData];
-    
-    if (filtro.genero) {
-        filtrados = filtrados.filter(est => est.genero === filtro.genero);
-    }
-    
-    if (filtro.edadMinima || filtro.edadMaxima) {
-        filtrados = filtrados.filter(est => {
-            const edad = est.calcularEdad ? est.calcularEdad() : null;
-            if (!edad) return false;
-            
-            if (filtro.edadMinima && edad < filtro.edadMinima) return false;
-            if (filtro.edadMaxima && edad > filtro.edadMaxima) return false;
-            
-            return true;
-        });
-    }
-    
-    mostrarTabla(filtrados);
 }
 
 // Limpiar filtros
@@ -348,57 +328,7 @@ function confirmarEliminar(codigoEstudiante, nombreCompleto) {
 
 // Desvincular grupo
 async function desvincularGrupo(codigoEstudiante) {
-    // Buscar el estudiante para obtener su nombre
-    const estudiante = estudiantesData.find(est => est.codigoEstudiante === codigoEstudiante);
-    
-    if (!estudiante) {
-        mostrarMensaje('Error', 'Estudiante no encontrado', 'error');
-        return;
-    }
-    
-    // Verificar si el estudiante tiene grupo asignado
-    if (!estudiante.grupo) {
-        mostrarMensaje('Información', 'El estudiante no tiene grupo asignado', 'info');
-        return;
-    }
-    
-    // Guardar el código del estudiante para usarlo después
-    estudianteSeleccionado = codigoEstudiante;
-    
-    // Configurar el modal de confirmación
-    document.getElementById('nombre-estudiante-desvincular').textContent = 
-        `${estudiante.nombre} ${estudiante.apellido}`;
-    
-    // Abrir modal de confirmación
-    abrirModal('modal-desvincular');
-}
-
-// Confirmar desvinculación
-async function confirmarDesvinculacion() {
-    try {
-        const response = await fetch(`${API_URL}/${estudianteSeleccionado}/desvincular-grupo`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        const data = await response.json();
-        
-        cerrarModal('modal-desvincular');
-        
-        if (response.ok) {
-            mostrarMensaje('Éxito', 'Estudiante desvinculado satisfactoriamente', 'success');
-            cargarEstudiantes();
-        } else {
-            mostrarMensaje('Error', data.mensaje || 'Error en la base de datos', 'error');
-        }
-        
-    } catch (error) {
-        cerrarModal('modal-desvincular');
-        console.error('Error al desvincular estudiante:', error);
-        mostrarMensaje('Error', 'Error en la base de datos', 'error');
-    }
+    mostrarMensaje('Información', 'La funcionalidad de desvincular grupo se implementará en el caso de uso correspondiente', 'info');
 }
 
 // Funciones de UI

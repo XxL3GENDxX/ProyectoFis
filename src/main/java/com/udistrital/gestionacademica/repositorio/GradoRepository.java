@@ -7,6 +7,6 @@ import java.util.Optional;
 
 @Repository
 public interface GradoRepository extends JpaRepository<Grado, Long> {
-
+    
     Optional<Grado> findByNombreGrado(String nombreGrado);
 }

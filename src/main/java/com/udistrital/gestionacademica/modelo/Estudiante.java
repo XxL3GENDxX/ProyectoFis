@@ -6,8 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-
 @Entity
 @Table(name = "estudiante")
 @Data
@@ -35,7 +33,6 @@ public class Estudiante {
     // REFACTORIZADO: Cambio de String a Grupo
     @ManyToOne
     @JoinColumn(name = "id_grupo")
-    @JsonBackReference
     private Grupo grupo;
 
     @Column(name = "estado", nullable = false, length = 20)

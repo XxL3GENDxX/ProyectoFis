@@ -1,14 +1,12 @@
 package com.udistrital.gestionacademica.modelo;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.HashMap;
 import java.util.Map;
-
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "grupo")
@@ -17,7 +15,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 @AllArgsConstructor
 public class Grupo {
 
-    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_grupo")
@@ -34,12 +31,11 @@ public class Grupo {
 
     @ManyToOne
     @JoinColumn(name = "id_grado", nullable = false)
-    @JsonBackReference
     private Grado grado;
 
     @OneToMany(mappedBy = "grupo", cascade = CascadeType.ALL)
-    @JsonIgnore
     @MapKeyColumn(name = "codigo_estudiante")
+    @JsonIgnore
     private Map<Integer, Estudiante> estudiantes = new HashMap<>();
 
     // Método para verificar si el grupo está completo
