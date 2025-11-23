@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,6 +25,7 @@
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
+
 <body>
     <div class="container">
         <header class="page-header">
@@ -38,13 +40,11 @@
             <section class="search-section">
                 <div class="search-bar">
                     <i class="fas fa-search search-icon"></i>
-                    <input 
-                        type="text" 
-                        id="txt-buscar-estudiante" 
+                    <input type="text" id="txt-buscar-estudiante"
                         placeholder="Buscar estudiante por nombre, apellido, documento, grado o grupo..."
                         class="search-input">
                 </div>
-                
+
                 <div class="filter-container">
                     <button class="btn btn-filter" id="btn-toggle-filtros">
                         <i class="fas fa-filter"></i> Filtros
@@ -180,39 +180,25 @@
     </div>
 
     <!-- Modal para confirmar desvinculación -->
+    <!-- ACTUALIZAR en gestionarEstudiantes.html líneas 180-197 -->
     <div class="modal" id="modal-desvincular">
         <div class="modal-content">
             <div class="modal-header">
                 <h2><i class="fas fa-question-circle"></i> Confirmar Desvinculación</h2>
             </div>
             <div class="modal-body">
-                <p>¿Está seguro que desea desvincular al estudiante <strong id="nombre-estudiante-desvincular"></strong>?</p>
+                <p>¿Está seguro que desea desvincular al estudiante <strong
+                        id="nombre-estudiante-desvincular"></strong>?</p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="cerrarModal('modal-desvincular')">Cancelar</button>
-                <button class="btn btn-danger" onclick="confirmarDesvinculacion()">
+                <button class="btn btn-danger" id="btn-confirmar-desvincular">
                     <i class="fas fa-unlink"></i> Confirmar
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Modal para confirmar eliminación -->
-    <div class="modal" id="modal-eliminar">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h2>
-            </div>
-            <div class="modal-body">
-                <p>¿Está seguro que desea eliminar al estudiante <strong id="nombre-estudiante-eliminar"></strong>?</p>
-                <p class="warning-text">Esta acción no se puede deshacer.</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="cerrarModal('modal-eliminar')">Cancelar</button>
-                <button class="btn btn-danger" id="btn-confirmar-eliminar">Eliminar</button>
-            </div>
-        </div>
-    </div>
 
     <!-- Modal para mensaje de éxito/error/advertencia -->
     <div class="modal" id="modal-mensaje">
@@ -230,4 +216,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>

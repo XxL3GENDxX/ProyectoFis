@@ -8,6 +8,7 @@ let modoGestionGrupo = false;
 let estudiantesData = [];
 let timeoutBusqueda = null;
 let estudianteSeleccionado = null;
+let estudianteADesvincular = null; // Variable para almacenar el estudiante a desvincular
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
@@ -42,6 +43,9 @@ function inicializarEventos() {
 
     // Evento para confirmar asignación
     document.getElementById('btn-confirmar-asignar').addEventListener('click', confirmarAsignacion);
+    
+    // Evento para confirmar desvinculación - NUEVO
+    document.getElementById('btn-confirmar-desvincular').addEventListener('click', confirmarDesvinculacion);
 }
 
 // Cargar todos los estudiantes
@@ -187,7 +191,7 @@ function generarBotonesOpciones(estudiante) {
             <button class="btn btn-success btn-icon" onclick="asignarGrupo(${estudiante.codigoEstudiante})" title="Asignar a grupo">
                 <i class="fas fa-check"></i>
             </button>
-            <button class="btn btn-danger btn-icon" onclick="desvincularGrupo(${estudiante.codigoEstudiante})" title="Desvincular de grupo">
+            <button class="btn btn-danger btn-icon" onclick="desvincularGrupo(${estudiante.codigoEstudiante}, '${estudiante.nombre} ${estudiante.apellido}')" title="Desvincular de grupo">
                 <i class="fas fa-times"></i>
             </button>
         `;
@@ -326,9 +330,65 @@ function confirmarEliminar(codigoEstudiante, nombreCompleto) {
     mostrarMensaje('Información', 'La funcionalidad de eliminar estudiante se implementará en el caso de uso correspondiente', 'info');
 }
 
-// Desvincular grupo
-async function desvincularGrupo(codigoEstudiante) {
-    mostrarMensaje('Información', 'La funcionalidad de desvincular grupo se implementará en el caso de uso correspondiente', 'info');
+/**
+ * NUEVA FUNCIONALIDAD - Desvincular grupo
+ * Paso 1-2 del diagrama: El actor selecciona desvincular y el sistema muestra confirmación
+ * @param {number} codigoEstudiante - Código del estudiante
+ * @param {string} nombreCompleto - Nombre completo del estudiante
+ */
+function desvincularGrupo(codigoEstudiante, nombreCompleto) {
+    // Guardar el código del estudiante para usar en la confirmación
+    estudianteADesvincular = codigoEstudiante;
+    
+    // Actualizar el nombre del estudiante en el modal
+    document.getElementById('nombre-estudiante-desvincular').textContent = nombreCompleto;
+    
+    // Paso 2: Mostrar modal de confirmación
+    abrirModal('modal-desvincular');
+}
+
+/**
+ * NUEVA FUNCIONALIDAD - Confirmar desvinculación
+ * Paso 4-5 del diagrama: El actor confirma y el sistema desvincula
+ */
+async function confirmarDesvinculacion() {
+    if (!estudianteADesvincular) {
+        return;
+    }
+    
+    try {
+        // Paso 5: Desvincular al estudiante del grupo
+        const response = await fetch(`${API_URL}/${estudianteADesvincular}/desvincular-grupo`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        // Cerrar modal de confirmación
+        cerrarModal('modal-desvincular');
+        
+        if (response.ok) {
+            // Paso 6: Mostrar mensaje de éxito
+            mostrarMensaje('Éxito', 'Estudiante desvinculado satisfactoriamente', 'success');
+            // Recargar la tabla de estudiantes
+            cargarEstudiantes();
+        } else {
+            // Flujo alternativo: Error en la base de datos
+            mostrarMensaje('Error', data.mensaje || 'Error en la base de datos', 'error');
+        }
+        
+    } catch (error) {
+        console.error('Error al desvincular estudiante:', error);
+        cerrarModal('modal-desvincular');
+        // Flujo alternativo: Error en la base de datos
+        mostrarMensaje('Error', 'Error en la base de datos', 'error');
+    } finally {
+        // Limpiar variable temporal
+        estudianteADesvincular = null;
+    }
 }
 
 // Funciones de UI

@@ -66,6 +66,43 @@ public class EstudianteController {
         }
     }
 
+    /**
+     * Endpoint para desvincular estudiante de su grupo
+     * Implementa el paso 5 del diagrama de actividades "Desvincular Estudiante"
+     * 
+     * @param codigoEstudiante Código del estudiante a desvincular
+     * @return ResponseEntity con el resultado de la operación
+     */
+    @DeleteMapping("/{codigoEstudiante}/desvincular-grupo")
+    public ResponseEntity<?> desvincularEstudianteDeGrupo(@PathVariable Long codigoEstudiante) {
+        try {
+            log.info("Desvinculando estudiante {} de su grupo", codigoEstudiante);
+            
+            Estudiante estudianteActualizado = estudianteService.desvincularEstudianteDeGrupo(codigoEstudiante);
+            
+            // Paso 6: Mensaje de éxito
+            return ResponseEntity.ok(crearRespuestaExito(
+                    "Estudiante desvinculado satisfactoriamente", 
+                    estudianteActualizado
+            ));
+            
+        } catch (RuntimeException e) {
+            log.error("Error al desvincular estudiante: {}", e.getMessage());
+            
+            // Verificar si el estudiante no tiene grupo
+            if ("ESTUDIANTE_SIN_GRUPO".equals(e.getMessage())) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(crearRespuestaError("El estudiante no tiene grupo asignado"));
+            }
+            
+            // Flujo alternativo: Error en la base de datos
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
+
     private Map<String, Object> crearRespuestaError(String mensaje) {
         Map<String, Object> response = new HashMap<>();
         response.put("error", true);
