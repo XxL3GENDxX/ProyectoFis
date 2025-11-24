@@ -18,15 +18,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Inicializar eventos
 function inicializarEventos() {
+    // Paso 1: El actor diligencia la barra de búsqueda
     document.getElementById('txt-buscar-estudiante').addEventListener('input', function(e) {
         clearTimeout(timeoutBusqueda);
         timeoutBusqueda = setTimeout(() => {
-            buscarEstudiantes(e.target.value);
+            aplicarBusquedaYFiltros();
         }, 300);
     });
 
     document.getElementById('btn-toggle-filtros').addEventListener('click', toggleFiltros);
-    document.getElementById('btn-aplicar-filtros').addEventListener('click', aplicarFiltros);
+    // Paso 6: El actor presiona la opción "Buscar" (aplicar filtros)
+    document.getElementById('btn-aplicar-filtros').addEventListener('click', aplicarBusquedaYFiltros);
     document.getElementById('btn-limpiar-filtros').addEventListener('click', limpiarFiltros);
     document.getElementById('btn-gestionar-grupo-mode').addEventListener('click', toggleModoGestionGrupo);
     document.getElementById('select-grado-asignar').addEventListener('change', cargarGruposPorGrado);
@@ -35,7 +37,7 @@ function inicializarEventos() {
     document.getElementById('btn-confirmar-modificar').addEventListener('click', confirmarModificacion);
 }
 
-// Cargar todos los estudiantes
+// Cargar todos los estudiantes (sin filtros)
 async function cargarEstudiantes() {
     mostrarLoading();
     
@@ -60,42 +62,101 @@ async function cargarEstudiantes() {
     }
 }
 
-// Búsqueda de estudiantes
-function buscarEstudiantes(texto) {
-    if (!texto) {
-        mostrarTabla(estudiantesData);
+/**
+ * Aplicar búsqueda y filtros
+ * Implementa el flujo completo del caso de uso "Mostrar Estudiantes por Filtro"
+ * 
+ * Paso 1: Obtiene el texto de la barra de búsqueda
+ * Paso 3-5: Obtiene los valores de los filtros seleccionados
+ * Paso 6: Realiza la búsqueda cuando el actor presiona "Buscar"
+ * Paso 7-9: Muestra los resultados o mensaje de error
+ */
+async function aplicarBusquedaYFiltros() {
+    mostrarLoading();
+    
+    // Paso 1: Obtener texto de búsqueda
+    const textoBusqueda = document.getElementById('txt-buscar-estudiante').value.trim();
+    
+    // Paso 3-5: Obtener valores de filtros opcionales seleccionados
+    const genero = document.getElementById('filtro-genero').value || null;
+    const edadMinima = document.getElementById('filtro-edad-min').value ? 
+                      parseInt(document.getElementById('filtro-edad-min').value) : null;
+    const edadMaxima = document.getElementById('filtro-edad-max').value ? 
+                      parseInt(document.getElementById('filtro-edad-max').value) : null;
+    const ordenAlfabetico = document.getElementById('filtro-orden').value === 'true';
+    
+    // Validar rango de edad (Regla de negocio)
+    if (edadMinima !== null && edadMaxima !== null && edadMinima > edadMaxima) {
+        mostrarMensaje('Advertencia', 
+            'La edad mínima no puede ser mayor que la edad máxima', 
+            'warning');
         return;
     }
     
-    const textoLower = texto.toLowerCase();
-    const filtrados = estudiantesData.filter(est => {
-        return est.nombre.toLowerCase().includes(textoLower) ||
-               est.apellido.toLowerCase().includes(textoLower) ||
-               (est.documento && est.documento.toLowerCase().includes(textoLower)) ||
-               (est.grupo && est.grupo.grado && est.grupo.grado.nombreGrado.toLowerCase().includes(textoLower)) ||
-               (est.grupo && est.grupo.numeroGrupo && est.grupo.numeroGrupo.toString().includes(textoLower));
-    });
-    
-    mostrarTabla(filtrados);
+    try {
+        // Construir URL con parámetros
+        const params = new URLSearchParams();
+        
+        if (textoBusqueda) {
+            params.append('textoBusqueda', textoBusqueda);
+        }
+        if (genero) {
+            params.append('genero', genero);
+        }
+        if (edadMinima !== null) {
+            params.append('edadMinima', edadMinima);
+        }
+        if (edadMaxima !== null) {
+            params.append('edadMaxima', edadMaxima);
+        }
+        params.append('ordenAlfabetico', ordenAlfabetico);
+        
+        // Paso 6-7: Realizar búsqueda en el servidor
+        const url = `${API_URL}/buscar?${params.toString()}`;
+        console.log('Buscando con URL:', url);
+        
+        const response = await fetch(url);
+        
+        // Paso 8: Verificar si se encontraron resultados
+        if (response.status === 404) {
+            // Flujo Alternativo: No se encontraron resultados
+            // Paso 2 del flujo alternativo: Mostrar mensaje
+            const data = await response.json();
+            mostrarMensaje('Información', 
+                data.mensaje || 'No se encontró ningún estudiante con los criterios especificados', 
+                'info');
+            mostrarTabla([]);
+            return;
+        }
+        
+        if (!response.ok) {
+            // Flujo Alternativo: Error al conectar con la base de datos
+            const data = await response.json();
+            mostrarMensaje('Error', 
+                data.mensaje || 'Error en la base de datos', 
+                'error');
+            mostrarError();
+            return;
+        }
+        
+        // Paso 9: Mostrar los estudiantes encontrados
+        const estudiantes = await response.json();
+        estudiantesData = estudiantes;
+        mostrarTabla(estudiantes);
+        
+        console.log(`Búsqueda completada. Se encontraron ${estudiantes.length} estudiantes`);
+        
+    } catch (error) {
+        // Flujo Alternativo: Error al conectar con la base de datos
+        console.error('Error en búsqueda y filtros:', error);
+        mostrarMensaje('Error', 'Error en la base de datos', 'error');
+        mostrarError();
+    }
 }
 
-// Aplicar filtros avanzados
-async function aplicarFiltros() {
-    mostrarLoading();
-    
-    const filtro = {
-        genero: document.getElementById('filtro-genero').value || null,
-        edadMinima: document.getElementById('filtro-edad-min').value ? 
-                    parseInt(document.getElementById('filtro-edad-min').value) : null,
-        edadMaxima: document.getElementById('filtro-edad-max').value ? 
-                    parseInt(document.getElementById('filtro-edad-max').value) : null,
-        ordenAlfabetico: document.getElementById('filtro-orden').value === 'true'
-    };
-    
-}
-
-// Limpiar filtros
+// Limpiar filtros y volver a cargar todos los estudiantes
 function limpiarFiltros() {
+    document.getElementById('txt-buscar-estudiante').value = '';
     document.getElementById('filtro-genero').value = '';
     document.getElementById('filtro-edad-min').value = '';
     document.getElementById('filtro-edad-max').value = '';
@@ -103,7 +164,7 @@ function limpiarFiltros() {
     cargarEstudiantes();
 }
 
-// Toggle panel de filtros
+// Toggle panel de filtros (Paso 2: El sistema muestra opciones de filtros)
 function toggleFiltros() {
     const panel = document.getElementById('panel-filtros');
     if (panel.style.display === 'none') {
@@ -196,7 +257,6 @@ function generarBotonesOpciones(estudiante) {
             </button>
         `;
     } else {
-        // Modo normal: Editar, Eliminar y Switch de Estado
         const switchChecked = esActivo ? 'checked' : '';
         const btnEditarClass = !esActivo ? 'btn btn-primary btn-icon disabled' : 'btn btn-primary btn-icon';
         const btnEditarDisabled = !esActivo ? 'disabled' : '';
@@ -215,33 +275,18 @@ function generarBotonesOpciones(estudiante) {
     }
 }
 
-/**
- * Cambiar estado del estudiante (Activo/Inactivo)
- * Paso 1: El actor selecciona la opción "Gestionar estado del estudiante"
- * Paso 2: El sistema muestra mensaje de confirmación
- */
 function cambiarEstadoEstudiante(codigoEstudiante, nombreCompleto) {
-    // Guardar datos para la confirmación
     estudianteSeleccionado = codigoEstudiante;
-    
-    // Actualizar nombre en el modal
     document.getElementById('nombre-estudiante-estado').textContent = nombreCompleto;
-    
-    // Paso 2: Mostrar mensaje de confirmación
     abrirModal('modal-confirmar-cambio-estado');
 }
 
-/**
- * Confirmar cambio de estado
- * Paso 4-14: El actor confirma y el sistema cambia el estado
- */
 async function confirmarCambioEstado() {
     if (!estudianteSeleccionado) {
         return;
     }
     
     try {
-        // Paso 5-11: Solicitar cambio de estado al backend
         const response = await fetch(`${API_URL}/${estudianteSeleccionado}/cambiar-estado`, {
             method: 'PATCH',
             headers: {
@@ -250,17 +295,12 @@ async function confirmarCambioEstado() {
         });
         
         const data = await response.json();
-        
-        // Cerrar modal de confirmación
         cerrarModal('modal-confirmar-cambio-estado');
         
         if (response.ok) {
-            // Paso 8/12: Mostrar mensaje de éxito
             mostrarMensaje('Éxito', 'Estado modificado exitosamente', 'success');
-            // Recargar tabla
-            cargarEstudiantes();
+            aplicarBusquedaYFiltros();
         } else {
-            // Flujo alternativo: Error en la base de datos
             mostrarMensaje('Error', data.mensaje || 'Error en la base de datos', 'error');
         }
         
@@ -273,29 +313,18 @@ async function confirmarCambioEstado() {
     }
 }
 
-/**
- * Cancelar cambio de estado
- * Paso 3 - Flujo alternativo: El actor cancela la operación
- */
 function cancelarCambioEstado() {
-    // Restaurar el estado del switch
-    const estudiante = estudiantesData.find(e => e.codigoEstudiante === estudianteSeleccionado);
-    if (estudiante) {
-        cargarEstudiantes();
-    }
-    
     cerrarModal('modal-confirmar-cambio-estado');
+    aplicarBusquedaYFiltros();
     estudianteSeleccionado = null;
 }
 
-// Asignar grupo (modo gestión)
 async function asignarGrupo(codigoEstudiante) {
     estudianteSeleccionado = codigoEstudiante;
     await cargarGradosEnModal();
     abrirModal('modal-asignar-grupo');
 }
 
-// Cargar grados en el modal
 async function cargarGradosEnModal() {
     try {
         const response = await fetch(API_GRADOS_URL);
@@ -324,7 +353,6 @@ async function cargarGradosEnModal() {
     }
 }
 
-// Cargar grupos por grado
 async function cargarGruposPorGrado() {
     const idGrado = document.getElementById('select-grado-asignar').value;
     const selectGrupo = document.getElementById('select-grupo-asignar');
@@ -358,7 +386,6 @@ async function cargarGruposPorGrado() {
     }
 }
 
-// Confirmar asignación
 async function confirmarAsignacion() {
     const idGrado = document.getElementById('select-grado-asignar').value;
     const idGrupo = document.getElementById('select-grupo-asignar').value;
@@ -381,7 +408,7 @@ async function confirmarAsignacion() {
         if (response.ok) {
             cerrarModal('modal-asignar-grupo');
             mostrarMensaje('Éxito', 'Estudiante asignado exitosamente', 'success');
-            cargarEstudiantes();
+            aplicarBusquedaYFiltros();
         } else {
             if (data.mensaje === 'Grupo completo') {
                 mostrarMensaje('Advertencia', 'Grupo completo', 'warning');
@@ -396,7 +423,6 @@ async function confirmarAsignacion() {
     }
 }
 
-// Editar estudiante
 async function editarEstudiante(codigoEstudiante) {
     try {
         const response = await fetch(`${API_URL}/${codigoEstudiante}`);
@@ -466,7 +492,7 @@ async function confirmarModificacion() {
         
         if (response.ok) {
             mostrarMensaje('Éxito', 'Estudiante modificado exitosamente', 'success');
-            cargarEstudiantes();
+            aplicarBusquedaYFiltros();
         } else {
             if (response.status === 400) {
                 mostrarMensaje('Advertencia', data.mensaje || 'Datos ingresados no válidos', 'warning');
@@ -510,7 +536,7 @@ async function confirmarDesvinculacion() {
         
         if (response.ok) {
             mostrarMensaje('Éxito', 'Estudiante desvinculado satisfactoriamente', 'success');
-            cargarEstudiantes();
+            aplicarBusquedaYFiltros();
         } else {
             mostrarMensaje('Error', data.mensaje || 'Error en la base de datos', 'error');
         }

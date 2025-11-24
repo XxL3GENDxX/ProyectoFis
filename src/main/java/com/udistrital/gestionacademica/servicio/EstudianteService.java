@@ -8,8 +8,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -31,6 +34,139 @@ public class EstudianteService {
         }
     }
 
+    /**
+     * Buscar y filtrar estudiantes según los criterios especificados
+     * Implementa el caso de uso "Mostrar Estudiantes por Filtro"
+     * 
+     * Paso 1: Barra de búsqueda - búsqueda por nombre, apellido, documento
+     * Paso 3-5: Filtros opcionales - género, rango de edad, orden alfabético
+     * Paso 7: Consulta de estudiantes en el datastore
+     * Paso 8-9: Retorna los resultados encontrados
+     * 
+     * Reglas de negocio:
+     * - Los filtros son opcionales y pueden combinarse
+     * - La búsqueda es insensible a mayúsculas/minúsculas
+     * - El orden alfabético se aplica sobre nombre completo (nombre + apellido)
+     * - Si se diligencia la barra de búsqueda, el filtro se realiza sobre los resultados de búsqueda
+     * - Si no se diligencia, el filtro se realiza sobre todos los estudiantes
+     * 
+     * @param textoBusqueda Texto de búsqueda (puede ser nombre, apellido o documento)
+     * @param genero Filtro por género (opcional)
+     * @param edadMinima Edad mínima del rango (opcional)
+     * @param edadMaxima Edad máxima del rango (opcional)
+     * @param ordenAlfabetico Aplicar orden alfabético A-Z (opcional, por defecto true)
+     * @return Lista de estudiantes que cumplen los criterios
+     * @throws RuntimeException si ocurre un error en la base de datos
+     */
+    @Transactional(readOnly = true)
+    public List<Estudiante> buscarYFiltrarEstudiantes(
+            String textoBusqueda,
+            String genero,
+            Integer edadMinima,
+            Integer edadMaxima,
+            Boolean ordenAlfabetico) {
+        
+        try {
+            // Paso 7: Consultar estudiantes del datastore
+            List<Estudiante> estudiantes;
+            
+            // Regla de negocio: Si se diligencia la barra de búsqueda, filtrar sobre la búsqueda
+            // Si no, filtrar sobre todos los estudiantes
+            if (textoBusqueda != null && !textoBusqueda.trim().isEmpty()) {
+                log.info("Aplicando búsqueda con texto: {}", textoBusqueda);
+                estudiantes = buscarPorTexto(textoBusqueda);
+            } else {
+                log.info("Obteniendo todos los estudiantes para aplicar filtros");
+                estudiantes = estudianteRepository.findAll();
+            }
+            
+            // Paso 4-5: Aplicar filtros opcionales seleccionados por el actor
+            
+            // Filtro por género (opcional)
+            if (genero != null && !genero.trim().isEmpty()) {
+                log.info("Aplicando filtro de género: {}", genero);
+                estudiantes = filtrarPorGenero(estudiantes, genero);
+            }
+            
+            // Filtro por rango de edad (opcional)
+            if (edadMinima != null || edadMaxima != null) {
+                log.info("Aplicando filtro de rango de edad: {} - {}", edadMinima, edadMaxima);
+                estudiantes = filtrarPorRangoEdad(estudiantes, edadMinima, edadMaxima);
+            }
+            
+            // Orden alfabético (opcional, por defecto aplicado)
+            // Regla de negocio: El orden alfabético se aplica sobre el nombre completo
+            if (ordenAlfabetico != null && ordenAlfabetico) {
+                log.info("Aplicando orden alfabético A-Z");
+                estudiantes = ordenarAlfabeticamente(estudiantes);
+            }
+            
+            log.info("Búsqueda y filtrado completado. Estudiantes encontrados: {}", estudiantes.size());
+            return estudiantes;
+            
+        } catch (Exception e) {
+            // Flujo alternativo: Error al conectar con la base de datos
+            log.error("Error al buscar y filtrar estudiantes: {}", e.getMessage());
+            throw new RuntimeException("Error en la base de datos", e);
+        }
+    }
+    
+    /**
+     * Búsqueda por texto en nombre, apellido o documento
+     * Regla de negocio: La búsqueda es insensible a mayúsculas/minúsculas
+     */
+    private List<Estudiante> buscarPorTexto(String texto) {
+        String textoLower = texto.toLowerCase().trim();
+        return estudianteRepository.findAll().stream()
+                .filter(est -> 
+                    est.getNombre().toLowerCase().contains(textoLower) ||
+                    est.getApellido().toLowerCase().contains(textoLower) ||
+                    (est.getDocumento() != null && est.getDocumento().toLowerCase().contains(textoLower))
+                )
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Filtrar por género
+     */
+    private List<Estudiante> filtrarPorGenero(List<Estudiante> estudiantes, String genero) {
+        return estudiantes.stream()
+                .filter(est -> est.getGenero() != null && 
+                              est.getGenero().equalsIgnoreCase(genero.trim()))
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Filtrar por rango de edad
+     * Regla de negocio: La edad máxima debe ser mayor o igual a la edad mínima
+     */
+    private List<Estudiante> filtrarPorRangoEdad(List<Estudiante> estudiantes, Integer edadMinima, Integer edadMaxima) {
+        return estudiantes.stream()
+                .filter(est -> {
+                    Integer edad = est.calcularEdad();
+                    if (edad == null) {
+                        return false;
+                    }
+                    
+                    boolean cumpleMinima = edadMinima == null || edad >= edadMinima;
+                    boolean cumpleMaxima = edadMaxima == null || edad <= edadMaxima;
+                    
+                    return cumpleMinima && cumpleMaxima;
+                })
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Ordenar alfabéticamente A-Z
+     * Regla de negocio: El orden se aplica sobre el nombre completo (nombre + apellido)
+     */
+    private List<Estudiante> ordenarAlfabeticamente(List<Estudiante> estudiantes) {
+        return estudiantes.stream()
+                .sorted(Comparator
+                        .comparing(Estudiante::getApellido, String.CASE_INSENSITIVE_ORDER)
+                        .thenComparing(Estudiante::getNombre, String.CASE_INSENSITIVE_ORDER))
+                .collect(Collectors.toList());
+    }
     
     public Estudiante asignarEstudianteAGrupo(Long codigoEstudiante, Long idGrupo) {
         log.info("Asignando estudiante {} al grupo {}", codigoEstudiante, idGrupo);
@@ -175,41 +311,24 @@ public class EstudianteService {
                 .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
     }
 
-    /**
-     * Cambiar estado del estudiante (Activo <-> Inactivo)
-     * Implementa el caso de uso "Gestionar Estado del Estudiante"
-     * 
-     * Paso 5: Consulta el estado del estudiante
-     * Paso 6: Verifica el estado actual
-     * Paso 7/11: Actualiza el estado según corresponda
-     * 
-     * @param codigoEstudiante Código del estudiante
-     * @return Estudiante con estado actualizado
-     * @throws RuntimeException si ocurre un error en la base de datos
-     */
     public Estudiante cambiarEstadoEstudiante(Long codigoEstudiante) {
         log.info("Cambiando estado del estudiante con código: {}", codigoEstudiante);
         
         try {
-            // Paso 5: Consulta el estado del estudiante
             Estudiante estudiante = estudianteRepository.findById(codigoEstudiante)
                     .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
             
             String estadoActual = estudiante.getEstado();
             log.info("Estado actual del estudiante {}: {}", codigoEstudiante, estadoActual);
             
-            // Paso 6: Verifica el estado actual del estudiante
             if ("Inactivo".equalsIgnoreCase(estadoActual)) {
-                // Paso 7: Actualiza el estado del estudiante como activo
                 estudiante.setEstado("Activo");
                 log.info("Cambiando estado a Activo para estudiante {}", codigoEstudiante);
             } else {
-                // Paso 11: Actualiza el estado del estudiante como inactivo
                 estudiante.setEstado("Inactivo");
                 log.info("Cambiando estado a Inactivo para estudiante {}", codigoEstudiante);
             }
             
-            // Guardar cambios
             Estudiante estudianteActualizado = estudianteRepository.save(estudiante);
             
             log.info("Estado del estudiante {} actualizado exitosamente a: {}", 
@@ -221,7 +340,6 @@ public class EstudianteService {
             if ("Estudiante no encontrado".equals(e.getMessage())) {
                 throw e;
             }
-            // Flujo alternativo: Error en la base de datos
             log.error("Error al cambiar estado del estudiante: {}", e.getMessage());
             throw new RuntimeException("Error en la base de datos", e);
         }

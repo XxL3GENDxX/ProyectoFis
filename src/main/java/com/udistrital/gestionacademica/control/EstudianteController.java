@@ -34,6 +34,60 @@ public class EstudianteController {
         }
     }
     
+    /**
+     * Buscar y filtrar estudiantes
+     * Paso 1-9: Implementa el flujo completo del caso de uso "Mostrar Estudiantes por Filtro"
+     * 
+     * @param textoBusqueda Texto de búsqueda (Paso 1)
+     * @param genero Filtro de género (Paso 3-5)
+     * @param edadMinima Edad mínima del rango (Paso 3-5)
+     * @param edadMaxima Edad máxima del rango (Paso 3-5)
+     * @param ordenAlfabetico Orden alfabético A-Z (Paso 3-5)
+     * @return Lista de estudiantes filtrados o mensaje de error
+     */
+    @GetMapping("/buscar")
+    public ResponseEntity<?> buscarYFiltrarEstudiantes(
+            @RequestParam(required = false) String textoBusqueda,
+            @RequestParam(required = false) String genero,
+            @RequestParam(required = false) Integer edadMinima,
+            @RequestParam(required = false) Integer edadMaxima,
+            @RequestParam(required = false, defaultValue = "true") Boolean ordenAlfabetico) {
+        
+        try {
+            log.info("Buscando estudiantes con filtros - Búsqueda: {}, Género: {}, EdadMin: {}, EdadMax: {}, Orden: {}", 
+                    textoBusqueda, genero, edadMinima, edadMaxima, ordenAlfabetico);
+            
+            // Paso 7: El sistema consulta los estudiantes según la barra de búsqueda y los filtros aplicados
+            List<Estudiante> estudiantes = estudianteService.buscarYFiltrarEstudiantes(
+                    textoBusqueda, 
+                    genero, 
+                    edadMinima, 
+                    edadMaxima, 
+                    ordenAlfabetico
+            );
+            
+            // Paso 8: El sistema verifica si se encontraron resultados
+            if (estudiantes.isEmpty()) {
+                // Flujo Alternativo: No se encontraron resultados
+                log.info("No se encontraron estudiantes con los criterios especificados");
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(crearRespuestaError("No se encontró ningún estudiante con los criterios especificados"));
+            }
+            
+            // Paso 9: El sistema muestra los estudiantes encontrados
+            log.info("Se encontraron {} estudiantes", estudiantes.size());
+            return ResponseEntity.ok(estudiantes);
+            
+        } catch (Exception e) {
+            // Flujo Alternativo: Error al conectar con la base de datos
+            log.error("Error al buscar y filtrar estudiantes", e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
+    
     @GetMapping("/{codigoEstudiante}")
     public ResponseEntity<?> obtenerEstudiantePorCodigo(@PathVariable Long codigoEstudiante) {
         try {
@@ -146,20 +200,13 @@ public class EstudianteController {
         }
     }
 
-    /**
-     * Gestionar estado del estudiante (Activo/Inactivo)
-     * Implementa el caso de uso "Gestionar Estado del Estudiante"
-     * Paso 5-11: Consulta el estado actual y actualiza según corresponda
-     */
     @PatchMapping("/{codigoEstudiante}/cambiar-estado")
     public ResponseEntity<?> cambiarEstadoEstudiante(@PathVariable Long codigoEstudiante) {
         try {
             log.info("Cambiando estado del estudiante con código: {}", codigoEstudiante);
             
-            // Paso 5-11: El servicio consulta el estado y lo actualiza
             Estudiante estudianteActualizado = estudianteService.cambiarEstadoEstudiante(codigoEstudiante);
             
-            // Paso 8/12: Mensaje de éxito
             return ResponseEntity.ok(crearRespuestaExito(
                     "Estado modificado exitosamente", 
                     estudianteActualizado
@@ -168,7 +215,6 @@ public class EstudianteController {
         } catch (RuntimeException e) {
             log.error("Error al cambiar estado del estudiante: {}", e.getMessage());
             
-            // Flujo alternativo: Error en la base de datos
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(crearRespuestaError("Error en la base de datos"));
