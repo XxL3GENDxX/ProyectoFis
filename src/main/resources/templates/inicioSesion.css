@@ -1,0 +1,267 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    display: flex;
+}
+
+/* Panel Izquierdo - Formulario */
+.login-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    background-color: #ffffff;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 450px;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header h1 {
+    font-size: 2rem;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+}
+
+.login-form {
+    width: 100%;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #475569;
+    font-weight: 500;
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.password-toggle {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.btn-login {
+    width: 100%;
+    padding: 1rem;
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 1rem;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+}
+
+.back-link {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.back-link a {
+    color: #2563eb;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+.back-link a:hover {
+    gap: 0.75rem;
+}
+
+/* Panel Derecho - Información */
+.info-panel {
+    flex: 1;
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.info-panel::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 30px 30px;
+    animation: moveBackground 20s linear infinite;
+}
+
+@keyframes moveBackground {
+    0% {
+        transform: translate(0, 0);
+    }
+    100% {
+        transform: translate(30px, 30px);
+    }
+}
+
+.info-content {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    max-width: 500px;
+}
+
+.info-content h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    animation: fadeInDown 1s;
+}
+
+.info-content p {
+    font-size: 1.2rem;
+    line-height: 1.8;
+    opacity: 0.95;
+    margin-bottom: 2rem;
+    animation: fadeInUp 1s;
+}
+
+.admission-cta {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2rem;
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    animation: fadeIn 1.5s;
+}
+
+.admission-cta h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.btn-admissions {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: white;
+    color: #2563eb;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    margin-top: 1rem;
+    transition: all 0.3s;
+}
+
+.btn-admissions:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 968px) {
+    body {
+        flex-direction: column;
+    }
+
+    .info-panel {
+        order: -1;
+        padding: 2rem;
+    }
+
+    .info-content h2 {
+        font-size: 2rem;
+    }
+
+    .info-content p {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .login-panel {
+        padding: 1.5rem;
+    }
+
+    .login-header h1 {
+        font-size: 1.5rem;
+    }
+}
