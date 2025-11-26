@@ -13,13 +13,37 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/estudiantes")
+@RequestMapping("/api/estudiante")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = { "http://127.0.0.1:5500", "http://localhost:5500" })
 public class EstudianteController {
 
     private final EstudianteService estudianteService;
+
+    @PostMapping("/crear")
+    public ResponseEntity<?> crearEstudiante(@RequestBody Estudiante estudiante, Long idAcudiente) {
+        try {
+            log.info("Creando nuevo estudiante");
+            Estudiante nuevoEstudiante = estudianteService.crearEstudiante(estudiante, idAcudiente);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoEstudiante);
+        } catch (RuntimeException e) {
+            if (e.getMessage().startsWith("DATOS_INVALIDOS")) {
+                String detalleError = e.getMessage().replace("DATOS_INVALIDOS: ", "");
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(crearRespuestaError("Datos ingresados no válidos: " + detalleError));
+            }
+            if ("DOCUMENTO_DUPLICADO".equals(e.getMessage())) {
+                return ResponseEntity
+                        .status(HttpStatus.CONFLICT)
+                        .body(crearRespuestaError("Ya existe un registro con este documento"));
+            }
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
 
     @GetMapping
     public ResponseEntity<?> obtenerTodosLosEstudiantes() {

@@ -27,35 +27,85 @@ function toggleMobileMenu() {
 }
 
 // Enviar formulario de admisión
-function enviarSolicitud(event) {
+async function enviarSolicitud(event) {
     event.preventDefault();
 
-    // Recopilar datos del formulario
-    const formData = {
-        estudiante: {
-            numeroIdentificacion: document.getElementById('numIdentificacion').value,
-            nombre: document.getElementById('nombre').value,
-            apellido: document.getElementById('apellido').value,
-            fechaNacimiento: document.getElementById('fechaNacimiento').value
-        },
-        acudiente: {
-            numeroIdentificacion: document.getElementById('numIdentificacionAcudiente').value,
-            nombre: document.getElementById('nombreAcudiente').value,
-            apellido: document.getElementById('apellidoAcudiente').value,
-            fechaNacimiento: document.getElementById('fechaNacimientoAcudiente').value,
-            telefono: document.getElementById('telefono').value,
-            email: document.getElementById('email').value
-        }
+    const personaAcudienteDATA = {
+        numeroIdentificacion: document.getElementById('numIdentificacionAcudiente').value,
+        nombre: document.getElementById('nombreAcudiente').value,
+        apellido: document.getElementById('apellidoAcudiente').value,
+        fechaNacimiento: document.getElementById('fechaNacimientoAcudiente').value, 
     };
 
-    // Mostrar mensaje de confirmación
-    alert('¡Solicitud enviada exitosamente! Nos pondremos en contacto con usted pronto.');
+    const personaAcudienteResponse = await fetch("http://localhost:8080/api/persona/crear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(personaAcudienteDATA)
+    });
+    const personaAcudienteCreada = await personaAcudienteResponse.json();
 
-    // Limpiar formulario
+    const personaEstudianteDATA = {
+        numeroIdentificacion: document.getElementById('numIdentificacion').value,
+        nombre: document.getElementById('nombre').value,
+        apellido: document.getElementById('apellido').value,
+        fechaNacimiento: document.getElementById('fechaNacimiento').value, 
+    };
+
+    const personaEstudianteResponse = await fetch("http://localhost:8080/api/persona/crear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(personaEstudianteDATA)
+    });
+    const personaEstudianteCreada = await personaEstudianteResponse.json();
+
+    // 1. CREAR ACUDIENTE
+    const acudienteData = {
+        idPersona: personaAcudienteCreada.id,
+        direccion: document.getElementById('direccion').value,
+        telefono: document.getElementById('telefono').value,
+        email: document.getElementById('email').value
+    };
+
+    const acudienteResponse = await fetch("http://localhost:8080/api/acudiente/crear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(acudienteData)
+    });
+
+    const acudienteCreado = await acudienteResponse.json();
+
+    // 2. CREAR ESTUDIANTE usando id del acudiente
+    const estudianteData = {
+        idPersona: personaEstudianteCreada.id,
+        idAcudiente: acudienteCreado.id
+        
+    };
+
+    await fetch("http://localhost:8080/api/estudiante/crear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(estudianteData)
+    });
+
+    const estudianteCreado = await estudianteResponse.json();
+
+    // 3. CREAR PREINSCRIPCIÓN usando id del estudiante
+    const preinscripcionData = {
+        idEstudiante: estudianteCreado.id,
+        idAcudiente: acudienteCreado.id,
+    };
+
+    await fetch("http://localhost:8080/api/preinscripcion/crear", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(preinscripcionData)
+    });
+
+    alert("¡Solicitud registrada con éxito!");
+
     document.getElementById('formAdmision').reset();
-
-    console.log('Datos de solicitud:', formData);
 }
+
 
 // Smooth scroll para navegación
 document.addEventListener('DOMContentLoaded', function() {

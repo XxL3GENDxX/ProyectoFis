@@ -4,35 +4,34 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "estudiante")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Estudiante extends Persona {
+public class Estudiante {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "codigo_estudiante")
+    @Column(name = "codigoEstudiante")
     private Long codigoEstudiante;
 
     @ManyToOne
-    @JoinColumn(name = "id_persona", nullable = false)
-    private Persona persona;
-
-    @Column(name = "id_acudiente")
-    private Long idAcudiente;
+    @JoinColumn(name = "idAcudiente")
+    private Acudiente acudiente;
 
     @ManyToOne
-    @JoinColumn(name = "id_grupo")
+    @JoinColumn(name = "idPersona")
+    private Persona persona;
+
+    @ManyToOne
+    @JoinColumn(name = "idGrupo")
     private Grupo grupo;
 
     @Column(name = "estado", nullable = false, length = 20)
-    private String estado = "Activo";
+    private String estado = "Pendiente";
 
- 
     // Método auxiliar para obtener el nombre del grupo
     public String getNombreGrupo() {
         if (grupo == null) {

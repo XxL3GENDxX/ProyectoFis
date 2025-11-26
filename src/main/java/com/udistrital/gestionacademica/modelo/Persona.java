@@ -7,16 +7,19 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "persona")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Inheritance(strategy = InheritanceType.JOINED)
 public class Persona {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_persona")
+    @Column(name = "idPersona")
     private Long idPersona;
 
     @Column(name = "documento", unique = true, length = 20)
@@ -36,6 +39,8 @@ public class Persona {
 
     // Relación con TokenUsuario
     @OneToMany(mappedBy = "persona", cascade = CascadeType.ALL)
+    @MapKeyColumn(name = "idTokenUsuario")
+    @JsonIgnore
     private ArrayList<TokenUsuario> usuarios = new ArrayList<>();
 
     // Método auxiliar para calcular la edad
@@ -45,5 +50,5 @@ public class Persona {
         }
         return LocalDateTime.now().getYear() - fechaDeNacimiento.getYear();
     }
-    
+
 }

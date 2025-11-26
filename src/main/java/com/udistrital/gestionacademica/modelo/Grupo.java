@@ -34,7 +34,7 @@ public class Grupo {
     private Grado grado;
 
     @OneToMany(mappedBy = "grupo", cascade = CascadeType.ALL)
-    @MapKeyColumn(name = "codigo_estudiante")
+    @MapKeyColumn(name = "codigoEstudiante")
     @JsonIgnore
     private Map<Integer, Estudiante> estudiantes = new HashMap<>();
 

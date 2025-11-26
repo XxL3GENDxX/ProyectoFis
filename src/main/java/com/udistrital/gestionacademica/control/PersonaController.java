@@ -7,24 +7,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
 
 @RestController
-@RequestMapping("/api/personas")
+@RequestMapping("/api/persona")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = {"http://127.0.0.1:5500", "http://localhost:5500"})
 public class PersonaController {
 
     private final PersonaService personaService;
 
-    @PostMapping
-    public ResponseEntity<Persona> crearPersona(@RequestBody Persona persona) { 
+    @PostMapping("/crear")
+    public ResponseEntity<Persona> crearPersona(@RequestBody Persona persona) {
         Persona nuevaPersona = personaService.crearPersona(persona);
         return new ResponseEntity<>(nuevaPersona, HttpStatus.CREATED);
     }
-    
-    
+
 }

@@ -2,10 +2,15 @@ package com.udistrital.gestionacademica.servicio;
 
 import com.udistrital.gestionacademica.modelo.Estudiante;
 import com.udistrital.gestionacademica.modelo.Grupo;
+import com.udistrital.gestionacademica.modelo.Acudiente;
+
 import com.udistrital.gestionacademica.repositorio.EstudianteRepository;
 import com.udistrital.gestionacademica.repositorio.GrupoRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +27,34 @@ public class EstudianteService {
 
     private final EstudianteRepository estudianteRepository;
     private final GrupoRepository grupoRepository;
+    @Autowired
+    private final AcudienteService acudienteService;
+
+    public Estudiante crearEstudiante(Estudiante estudiante, Long idAcudiente) {
+
+        try {
+            validarDatosEstudiante(estudiante);
+
+            Optional<Estudiante> estudianteExistente = estudianteRepository.findByDocumentoEstudiante(estudiante.getPersona().getDocumento());
+
+            if (estudianteExistente.isPresent()) {
+                throw new RuntimeException("DOCUMENTO_DUPLICADO");
+            }
+
+            Acudiente acudiente = acudienteService.obtenerAcudientePorId(idAcudiente);
+            estudiante.setAcudiente(acudiente);
+
+            Estudiante nuevoEstudiante = estudianteRepository.save(estudiante);
+            return nuevoEstudiante;
+
+        } catch (RuntimeException e) {
+            if ("DATOS_INVALIDOS".equals(e.getMessage())
+                    || "DOCUMENTO_DUPLICADO".equals(e.getMessage())) {
+                throw e;
+            }
+            throw new RuntimeException("Error en la base de datos", e);
+        }
+    }
 
     @Transactional(readOnly = true)
     public List<Estudiante> obtenerTodosLosEstudiantes() {
@@ -35,26 +68,27 @@ public class EstudianteService {
     }
 
     /**
-     * Buscar y filtrar estudiantes según los criterios especificados
-     * Implementa el caso de uso "Mostrar Estudiantes por Filtro"
-     * 
-     * Paso 1: Barra de búsqueda - búsqueda por nombre, apellido, documento
-     * Paso 3-5: Filtros opcionales - género, rango de edad, orden alfabético
-     * Paso 7: Consulta de estudiantes en el datastore
-     * Paso 8-9: Retorna los resultados encontrados
-     * 
-     * Reglas de negocio:
-     * - Los filtros son opcionales y pueden combinarse
-     * - La búsqueda es insensible a mayúsculas/minúsculas
-     * - El orden alfabético se aplica sobre nombre completo (nombre + apellido)
-     * - Si se diligencia la barra de búsqueda, el filtro se realiza sobre los resultados de búsqueda
+     * Buscar y filtrar estudiantes según los criterios especificados Implementa
+     * el caso de uso "Mostrar Estudiantes por Filtro"
+     *
+     * Paso 1: Barra de búsqueda - búsqueda por nombre, apellido, documento Paso
+     * 3-5: Filtros opcionales - género, rango de edad, orden alfabético Paso 7:
+     * Consulta de estudiantes en el datastore Paso 8-9: Retorna los resultados
+     * encontrados
+     *
+     * Reglas de negocio: - Los filtros son opcionales y pueden combinarse - La
+     * búsqueda es insensible a mayúsculas/minúsculas - El orden alfabético se
+     * aplica sobre nombre completo (nombre + apellido) - Si se diligencia la
+     * barra de búsqueda, el filtro se realiza sobre los resultados de búsqueda
      * - Si no se diligencia, el filtro se realiza sobre todos los estudiantes
-     * 
-     * @param textoBusqueda Texto de búsqueda (puede ser nombre, apellido o documento)
+     *
+     * @param textoBusqueda Texto de búsqueda (puede ser nombre, apellido o
+     * documento)
      * @param genero Filtro por género (opcional)
      * @param edadMinima Edad mínima del rango (opcional)
      * @param edadMaxima Edad máxima del rango (opcional)
-     * @param ordenAlfabetico Aplicar orden alfabético A-Z (opcional, por defecto true)
+     * @param ordenAlfabetico Aplicar orden alfabético A-Z (opcional, por
+     * defecto true)
      * @return Lista de estudiantes que cumplen los criterios
      * @throws RuntimeException si ocurre un error en la base de datos
      */
@@ -65,11 +99,11 @@ public class EstudianteService {
             Integer edadMinima,
             Integer edadMaxima,
             Boolean ordenAlfabetico) {
-        
+
         try {
             // Paso 7: Consultar estudiantes del datastore
             List<Estudiante> estudiantes;
-            
+
             // Regla de negocio: Si se diligencia la barra de búsqueda, filtrar sobre la búsqueda
             // Si no, filtrar sobre todos los estudiantes
             if (textoBusqueda != null && !textoBusqueda.trim().isEmpty()) {
@@ -79,116 +113,117 @@ public class EstudianteService {
                 log.info("Obteniendo todos los estudiantes para aplicar filtros");
                 estudiantes = estudianteRepository.findAll();
             }
-            
+
             // Paso 4-5: Aplicar filtros opcionales seleccionados por el actor
-            
             // Filtro por género (opcional)
             if (genero != null && !genero.trim().isEmpty()) {
                 log.info("Aplicando filtro de género: {}", genero);
                 estudiantes = filtrarPorGenero(estudiantes, genero);
             }
-            
+
             // Filtro por rango de edad (opcional)
             if (edadMinima != null || edadMaxima != null) {
                 log.info("Aplicando filtro de rango de edad: {} - {}", edadMinima, edadMaxima);
                 estudiantes = filtrarPorRangoEdad(estudiantes, edadMinima, edadMaxima);
             }
-            
+
             // Orden alfabético (opcional, por defecto aplicado)
             // Regla de negocio: El orden alfabético se aplica sobre el nombre completo
             if (ordenAlfabetico != null && ordenAlfabetico) {
                 log.info("Aplicando orden alfabético A-Z");
                 estudiantes = ordenarAlfabeticamente(estudiantes);
             }
-            
+
             log.info("Búsqueda y filtrado completado. Estudiantes encontrados: {}", estudiantes.size());
             return estudiantes;
-            
+
         } catch (Exception e) {
             // Flujo alternativo: Error al conectar con la base de datos
             log.error("Error al buscar y filtrar estudiantes: {}", e.getMessage());
             throw new RuntimeException("Error en la base de datos", e);
         }
     }
-    
+
     /**
-     * Búsqueda por texto en nombre, apellido o documento
-     * Regla de negocio: La búsqueda es insensible a mayúsculas/minúsculas
+     * Búsqueda por texto en nombre, apellido o documento Regla de negocio: La
+     * búsqueda es insensible a mayúsculas/minúsculas
      */
     private List<Estudiante> buscarPorTexto(String texto) {
         String textoLower = texto.toLowerCase().trim();
         return estudianteRepository.findAll().stream()
-                .filter(est -> 
-                    est.getNombre().toLowerCase().contains(textoLower) ||
-                    est.getApellido().toLowerCase().contains(textoLower) ||
-                    (est.getDocumento() != null && est.getDocumento().toLowerCase().contains(textoLower))
+                .filter(est
+                        -> est.getPersona().getNombre().toLowerCase().contains(textoLower)
+                || est.getPersona().getApellido().toLowerCase().contains(textoLower)
+                || (est.getPersona().getDocumento() != null && est.getPersona().getDocumento().toLowerCase().contains(textoLower))
                 )
                 .collect(Collectors.toList());
     }
-    
+
     /**
      * Filtrar por género
      */
     private List<Estudiante> filtrarPorGenero(List<Estudiante> estudiantes, String genero) {
         return estudiantes.stream()
-                .filter(est -> est.getGenero() != null && 
-                              est.getGenero().equalsIgnoreCase(genero.trim()))
+                .filter(est -> est.getPersona().getGenero() != null
+                && est.getPersona().getGenero().equalsIgnoreCase(genero.trim()))
                 .collect(Collectors.toList());
     }
-    
+
     /**
-     * Filtrar por rango de edad
-     * Regla de negocio: La edad máxima debe ser mayor o igual a la edad mínima
+     * Filtrar por rango de edad Regla de negocio: La edad máxima debe ser mayor
+     * o igual a la edad mínima
      */
     private List<Estudiante> filtrarPorRangoEdad(List<Estudiante> estudiantes, Integer edadMinima, Integer edadMaxima) {
         return estudiantes.stream()
                 .filter(est -> {
-                    Integer edad = est.calcularEdad();
+                    Integer edad = est.getPersona().calcularEdad();
                     if (edad == null) {
                         return false;
                     }
-                    
+
                     boolean cumpleMinima = edadMinima == null || edad >= edadMinima;
                     boolean cumpleMaxima = edadMaxima == null || edad <= edadMaxima;
-                    
+
                     return cumpleMinima && cumpleMaxima;
                 })
                 .collect(Collectors.toList());
     }
-    
+
     /**
-     * Ordenar alfabéticamente A-Z
-     * Regla de negocio: El orden se aplica sobre el nombre completo (nombre + apellido)
+     * Ordenar alfabéticamente A-Z Regla de negocio: El orden se aplica sobre el
+     * nombre completo (nombre + apellido)
      */
     private List<Estudiante> ordenarAlfabeticamente(List<Estudiante> estudiantes) {
         return estudiantes.stream()
                 .sorted(Comparator
-                        .comparing(Estudiante::getApellido, String.CASE_INSENSITIVE_ORDER)
-                        .thenComparing(Estudiante::getNombre, String.CASE_INSENSITIVE_ORDER))
+                        // Cambio clave: Accedemos a getPersona() y luego a getApellido()
+                        .comparing((Estudiante e) -> e.getPersona().getApellido(), String.CASE_INSENSITIVE_ORDER)
+                        // Hacemos lo mismo para el nombre
+                        .thenComparing(e -> e.getPersona().getNombre(), String.CASE_INSENSITIVE_ORDER))
                 .collect(Collectors.toList());
     }
-    
+
     public Estudiante asignarEstudianteAGrupo(Long codigoEstudiante, Long idGrupo) {
         log.info("Asignando estudiante {} al grupo {}", codigoEstudiante, idGrupo);
-        
+
         try {
             Estudiante estudiante = estudianteRepository.findById(codigoEstudiante)
                     .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
-            
+
             Grupo grupo = grupoRepository.findById(idGrupo)
                     .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
-            
+
             if (grupo.estaCompleto()) {
                 log.warn("El grupo {} está completo", idGrupo);
                 throw new RuntimeException("GRUPO_COMPLETO");
             }
-            
+
             estudiante.setGrupo(grupo);
             Estudiante estudianteActualizado = estudianteRepository.save(estudiante);
-            
+
             log.info("Estudiante {} asignado exitosamente al grupo {}", codigoEstudiante, idGrupo);
             return estudianteActualizado;
-            
+
         } catch (RuntimeException e) {
             if ("GRUPO_COMPLETO".equals(e.getMessage())) {
                 throw e;
@@ -200,22 +235,22 @@ public class EstudianteService {
 
     public Estudiante desvincularEstudianteDeGrupo(Long codigoEstudiante) {
         log.info("Desvinculando estudiante {} de su grupo", codigoEstudiante);
-        
+
         try {
             Estudiante estudiante = estudianteRepository.findById(codigoEstudiante)
                     .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
-            
+
             if (estudiante.getGrupo() == null) {
                 log.warn("El estudiante {} no tiene grupo asignado", codigoEstudiante);
                 throw new RuntimeException("ESTUDIANTE_SIN_GRUPO");
             }
-            
+
             estudiante.setGrupo(null);
             Estudiante estudianteActualizado = estudianteRepository.save(estudiante);
-            
+
             log.info("Estudiante {} desvinculado exitosamente de su grupo", codigoEstudiante);
             return estudianteActualizado;
-            
+
         } catch (RuntimeException e) {
             if ("ESTUDIANTE_SIN_GRUPO".equals(e.getMessage())) {
                 throw e;
@@ -227,83 +262,83 @@ public class EstudianteService {
 
     public Estudiante modificarEstudiante(Long codigoEstudiante, Estudiante estudianteModificado) {
         log.info("Modificando estudiante con código: {}", codigoEstudiante);
-        
+
         try {
             Estudiante estudianteExistente = estudianteRepository.findById(codigoEstudiante)
                     .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
-            
+
             validarDatosEstudiante(estudianteModificado);
-            
-            if (estudianteModificado.getDocumento() != null && 
-                !estudianteModificado.getDocumento().isEmpty()) {
-                
-                Optional<Estudiante> estudianteConDocumento = 
-                    estudianteRepository.findByDocumento(estudianteModificado.getDocumento());
-                
-                if (estudianteConDocumento.isPresent() && 
-                    !estudianteConDocumento.get().getCodigoEstudiante().equals(codigoEstudiante)) {
-                    log.warn("El documento {} ya existe en otro estudiante", 
-                            estudianteModificado.getDocumento());
+
+            if (estudianteModificado.getPersona().getDocumento() != null
+                    && !estudianteModificado.getPersona().getDocumento().isEmpty()) {
+
+                Optional<Estudiante> estudianteConDocumento
+                        = estudianteRepository.findByDocumentoEstudiante(estudianteModificado.getPersona().getDocumento());
+
+                if (estudianteConDocumento.isPresent()
+                        && !estudianteConDocumento.get().getCodigoEstudiante().equals(codigoEstudiante)) {
+                    log.warn("El documento {} ya existe en otro estudiante",
+                            estudianteModificado.getPersona().getDocumento());
                     throw new RuntimeException("DOCUMENTO_DUPLICADO");
                 }
             }
-            
+
             actualizarDatosEstudiante(estudianteExistente, estudianteModificado);
             Estudiante estudianteActualizado = estudianteRepository.save(estudianteExistente);
-            
+
             log.info("Estudiante {} modificado exitosamente", codigoEstudiante);
             return estudianteActualizado;
-            
+
         } catch (RuntimeException e) {
-            if ("DATOS_INVALIDOS".equals(e.getMessage()) || 
-                "DOCUMENTO_DUPLICADO".equals(e.getMessage())) {
+            if ("DATOS_INVALIDOS".equals(e.getMessage())
+                    || "DOCUMENTO_DUPLICADO".equals(e.getMessage())) {
                 throw e;
             }
             log.error("Error al modificar estudiante: {}", e.getMessage());
             throw new RuntimeException("Error en la base de datos", e);
         }
     }
-    
+
     private void validarDatosEstudiante(Estudiante estudiante) {
         StringBuilder errores = new StringBuilder();
-        
-        if (estudiante.getNombre() == null || estudiante.getNombre().trim().isEmpty()) {
+
+        if (estudiante.getPersona().getNombre() == null || estudiante.getPersona().getNombre().trim().isEmpty()) {
             errores.append("El nombre es obligatorio. ");
-        } else if (estudiante.getNombre().trim().length() < 2) {
+        } else if (estudiante.getPersona().getNombre().trim().length() < 2) {
             errores.append("El nombre debe tener al menos 2 caracteres. ");
         }
-        
-        if (estudiante.getApellido() == null || estudiante.getApellido().trim().isEmpty()) {
+
+        if (estudiante.getPersona().getApellido() == null || estudiante.getPersona().getApellido().trim().isEmpty()) {
             errores.append("El apellido es obligatorio. ");
-        } else if (estudiante.getApellido().trim().length() < 2) {
+        } else if (estudiante.getPersona().getApellido().trim().length() < 2) {
             errores.append("El apellido debe tener al menos 2 caracteres. ");
         }
-        
-        if (estudiante.getDocumento() == null || estudiante.getDocumento().trim().isEmpty()) {
+
+        if (estudiante.getPersona().getDocumento() == null || estudiante.getPersona().getDocumento().trim().isEmpty()) {
             errores.append("El documento es obligatorio. ");
-        } else if (!estudiante.getDocumento().matches("\\d+")) {
+        } else if (!estudiante.getPersona().getDocumento().matches("\\d+")) {
             errores.append("El documento debe contener solo números. ");
-        } else if (estudiante.getDocumento().trim().length() < 6 || 
-                   estudiante.getDocumento().trim().length() > 20) {
+        } else if (estudiante.getPersona().getDocumento().trim().length() < 6
+                || estudiante.getPersona().getDocumento().trim().length() > 20) {
             errores.append("El documento debe tener entre 6 y 20 dígitos. ");
         }
-        
+
         if (errores.length() > 0) {
             log.warn("Datos inválidos: {}", errores.toString());
             throw new RuntimeException("DATOS_INVALIDOS: " + errores.toString().trim());
         }
     }
-    
+
     private void actualizarDatosEstudiante(Estudiante existente, Estudiante modificado) {
-        existente.setNombre(modificado.getNombre().trim());
-        existente.setApellido(modificado.getApellido().trim());
-        existente.setDocumento(modificado.getDocumento().trim());
-        
-        if (modificado.getFechaDeNacimiento() != null) {
-            existente.setFechaDeNacimiento(modificado.getFechaDeNacimiento());
+        existente.getPersona().setNombre(modificado.getPersona().getNombre().trim());
+        existente.getPersona().setApellido(modificado.getPersona().getApellido().trim());
+        existente.getPersona().setDocumento(modificado.getPersona().getDocumento().trim());
+
+        if (modificado.getPersona().getFechaDeNacimiento() != null) {
+            existente.getPersona().setFechaDeNacimiento(modificado.getPersona().getFechaDeNacimiento());
         }
     }
-    
+
     @Transactional(readOnly = true)
     public Estudiante obtenerEstudiantePorCodigo(Long codigoEstudiante) {
         log.info("Obteniendo estudiante con código: {}", codigoEstudiante);
@@ -313,14 +348,14 @@ public class EstudianteService {
 
     public Estudiante cambiarEstadoEstudiante(Long codigoEstudiante) {
         log.info("Cambiando estado del estudiante con código: {}", codigoEstudiante);
-        
+
         try {
             Estudiante estudiante = estudianteRepository.findById(codigoEstudiante)
                     .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
-            
+
             String estadoActual = estudiante.getEstado();
             log.info("Estado actual del estudiante {}: {}", codigoEstudiante, estadoActual);
-            
+
             if ("Inactivo".equalsIgnoreCase(estadoActual)) {
                 estudiante.setEstado("Activo");
                 log.info("Cambiando estado a Activo para estudiante {}", codigoEstudiante);
@@ -328,14 +363,14 @@ public class EstudianteService {
                 estudiante.setEstado("Inactivo");
                 log.info("Cambiando estado a Inactivo para estudiante {}", codigoEstudiante);
             }
-            
+
             Estudiante estudianteActualizado = estudianteRepository.save(estudiante);
-            
-            log.info("Estado del estudiante {} actualizado exitosamente a: {}", 
+
+            log.info("Estado del estudiante {} actualizado exitosamente a: {}",
                     codigoEstudiante, estudianteActualizado.getEstado());
-            
+
             return estudianteActualizado;
-            
+
         } catch (RuntimeException e) {
             if ("Estudiante no encontrado".equals(e.getMessage())) {
                 throw e;

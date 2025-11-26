@@ -9,20 +9,13 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-
 @Repository
 public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
 
-    /**
-     * Obtiene todos los estudiantes ordenados alfabéticamente
-     */
-    @Query("SELECT e FROM Estudiante e ORDER BY e.apellido, e.nombre")
+    @Query("SELECT e FROM Estudiante e ORDER BY e.persona.apellido, e.persona.nombre")
     List<Estudiante> findAllOrdenados();
-    
-    /**
-     * Busca un estudiante por número de documento
-     * Necesario para validar documentos duplicados en modificación
-     */
-    @Query("SELECT e FROM Estudiante e WHERE e.documento = :documento")
-    Optional<Estudiante> findByDocumento(@Param("documento") String documento);
+
+    @Query("SELECT e FROM Estudiante e WHERE e.persona.documento = :documento")
+    Optional<Estudiante> findByDocumentoEstudiante(@Param("documento") String documento);
+
 }

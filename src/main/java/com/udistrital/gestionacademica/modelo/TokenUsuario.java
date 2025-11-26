@@ -27,11 +27,10 @@ public class TokenUsuario {
     private Boolean estado;
 
     @ManyToOne
-    @Column(name = "id_persona", nullable = false)
+    @JoinColumn(name = "idPersona")
     private Persona persona;
 
     @Column(name = "rol", nullable = false, length = 50)
     private String rol;
 
-    
 }
