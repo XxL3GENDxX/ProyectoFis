@@ -299,8 +299,8 @@ public class EstudianteService {
         existente.setApellido(modificado.getApellido().trim());
         existente.setDocumento(modificado.getDocumento().trim());
         
-        if (modificado.getFechaNacimiento() != null) {
-            existente.setFechaNacimiento(modificado.getFechaNacimiento());
+        if (modificado.getFechaDeNacimiento() != null) {
+            existente.setFechaDeNacimiento(modificado.getFechaDeNacimiento());
         }
     }
     
