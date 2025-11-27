@@ -15,19 +15,47 @@ function togglePassword() {
 }
 
 // Manejar login
-function handleLogin(event) {
+async function handleLogin(event) {
+  
     event.preventDefault();
 
+ 
     const usuario = document.getElementById('usuario').value;
     const contrasena = document.getElementById('contrasena').value;
 
-    // Aquí iría la lógica de autenticación
-    console.log('Intentando login con:', { usuario, contrasena });
+    // Enviar con los nombres correctos que espera el backend
+    const tokenUsuarioData = { 
+        nombreUsuario: usuario, 
+        contrasena: contrasena 
+    };
+    
+   
+    try {
+        
+        const response = await fetch("http://localhost:8080/api/token_usuario/validarLogin", {
+            method: "POST", 
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(tokenUsuarioData)
+        });
 
-    // Simulación de login exitoso
-    // En producción, esto debería validar contra el backend
-    alert('Inicio de sesión exitoso (simulado)');
+        const resultadoLogin = await response.json();
+        console.log('Respuesta del servidor:', resultadoLogin, 'Status:', response.status);
 
-    // Redirigir al módulo de gestión de estudiantes
-    window.location.href = 'gestionarEstudiantes.html';
+        if (response.ok) { 
+            // Login exitoso
+            console.log('Login exitoso para usuario:', usuario);
+            window.location.href = 'gestionarEstudiantes.html';
+        } else {
+            // Error en la autenticación
+            const mensajeError = resultadoLogin.mensaje || 'Usuario o Contraseña incorrecta.';
+            console.error('Error de autenticación:', mensajeError);
+            alert(mensajeError); 
+        }
+
+    } catch (error) {
+        
+        console.error('Error durante la comunicación con el servidor:', error);
+        alert('No se pudo conectar con el servicio de autenticación. Verifica tu conexión.');
+    }
+    
 }

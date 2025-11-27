@@ -17,9 +17,17 @@ public class TokenUsuarioService {
 
     
     public TokenUsuario validarTokenUsuario(String nombreUsuario, String contrasena) {
-      
-        return tokenUsuarioRepository.findByNombreUsuarioAndContrasena(nombreUsuario, contrasena)
-                .orElseThrow(() -> new IllegalArgumentException("Token inválido o no encontrado"));
+        log.info("Buscando usuario: '{}' con contraseña: '{}'", nombreUsuario, contrasena);
+        
+        var usuario = tokenUsuarioRepository.findByNombreUsuarioAndContrasena(nombreUsuario, contrasena);
+        
+        if (usuario.isEmpty()) {
+            log.warn("Usuario '{}' no encontrado o contraseña incorrecta", nombreUsuario);
+            throw new IllegalArgumentException("Token inválido o no encontrado");
+        }
+        
+        log.info("Usuario validado correctamente: {}", nombreUsuario);
+        return usuario.get();
     }
 
 
