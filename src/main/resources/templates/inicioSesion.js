@@ -39,14 +39,16 @@ async function handleLogin(event) {
         });
 
         const resultadoLogin = await response.json();
+        
         console.log('Respuesta del servidor:', resultadoLogin, 'Status:', response.status);
 
         if (response.ok) { 
-            // Login exitoso
+            
             console.log('Login exitoso para usuario:', usuario);
             window.location.href = 'gestionarEstudiantes.html';
+
         } else {
-            // Error en la autenticación
+            
             const mensajeError = resultadoLogin.mensaje || 'Usuario o Contraseña incorrecta.';
             console.error('Error de autenticación:', mensajeError);
             alert(mensajeError); 

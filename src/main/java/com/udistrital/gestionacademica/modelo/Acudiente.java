@@ -30,7 +30,7 @@ public class Acudiente {
     private String correoElectronico;
 
     @Column(name = "estado", length = 15)
-    private String estado;
+    private String estado = "Pendiente";
 
     @Column(name = "telefono", length = 100)
     private String telefono;

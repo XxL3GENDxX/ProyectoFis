@@ -92,7 +92,7 @@ async function enviarSolicitud(event) {
             },
             correoElectronico: document.getElementById('email').value,
             telefono: document.getElementById('telefono').value,
-            estado: 'Activo'
+            estado: 'Pendiente'
         };
 
         console.log('Creando acudiente:', acudienteData);

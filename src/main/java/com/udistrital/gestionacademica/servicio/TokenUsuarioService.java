@@ -17,7 +17,6 @@ public class TokenUsuarioService {
 
     
     public TokenUsuario validarTokenUsuario(String nombreUsuario, String contrasena) {
-        log.info("Buscando usuario: '{}' con contraseña: '{}'", nombreUsuario, contrasena);
         
         var usuario = tokenUsuarioRepository.findByNombreUsuarioAndContrasena(nombreUsuario, contrasena);
         
@@ -30,14 +29,4 @@ public class TokenUsuarioService {
         return usuario.get();
     }
 
-
-
-
-
-
-
-
-
-
-    
 }
