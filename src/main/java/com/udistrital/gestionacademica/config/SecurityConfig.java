@@ -44,12 +44,9 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Permitir orígenes del Frontend (Live Server)
+        // Permitir todos los orígenes en desarrollo
         configuration.setAllowedOrigins(Arrays.asList(
-                "http://127.0.0.1:5500",
-                "http://localhost:5500",
-                "http://127.0.0.1:5501",
-                "http://localhost:5501"
+                "*"  // En producción, cambiar a orígenes específicos
         ));
 
         // Métodos permitidos
@@ -60,8 +57,8 @@ public class SecurityConfig {
         // Headers permitidos
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
-        // Permitir credenciales
-        configuration.setAllowCredentials(true);
+        // Permitir credenciales (solo si no usas "*" para orígenes)
+        configuration.setAllowCredentials(false);
 
         // Exponer headers
         configuration.setExposedHeaders(Arrays.asList(

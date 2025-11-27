@@ -2,6 +2,7 @@
 const API_URL = 'http://localhost:8080/api/estudiante';
 const API_GRADOS_URL = 'http://localhost:8080/api/grados';
 const API_GRUPOS_URL = 'http://localhost:8080/api/grupos';
+
 function showSection(sectionName) {
     // Ocultar todas las secciones
     const sections = document.querySelectorAll('.content-section');
@@ -50,6 +51,8 @@ async function enviarSolicitud(event) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(personaAcudienteData)
         });
+
+        console.log('Respuesta de la API de persona acudiente:', personaAcudienteResponse);
 
         if (!personaAcudienteResponse.ok) {
             throw new Error('Error al crear persona del acudiente');

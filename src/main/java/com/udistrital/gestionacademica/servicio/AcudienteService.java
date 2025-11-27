@@ -31,7 +31,7 @@ public class AcudienteService {
 
             // Establecer estado por defecto si no viene
             if (acudiente.getEstado() == null || acudiente.getEstado().isEmpty()) {
-                acudiente.setEstado("Activo");
+                acudiente.setEstado("Pendiente");
             }
 
             log.info("Creando acudiente con correo: {}", acudiente.getCorreoElectronico());

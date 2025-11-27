@@ -5,7 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -38,10 +38,9 @@ public class Persona {
     private String genero;
 
     // Relación con TokenUsuario
-    @OneToMany(mappedBy = "persona", cascade = CascadeType.ALL)
-    @MapKeyColumn(name = "idTokenUsuario")
+    @OneToMany(mappedBy = "persona", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    private ArrayList<TokenUsuario> usuarios = new ArrayList<>();
+    private List<TokenUsuario> usuarios = new java.util.ArrayList<>();
 
     // Método auxiliar para calcular la edad
     public Integer calcularEdad() {
