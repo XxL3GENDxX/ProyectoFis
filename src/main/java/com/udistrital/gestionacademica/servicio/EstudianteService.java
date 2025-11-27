@@ -30,21 +30,38 @@ public class EstudianteService {
     @Autowired
     private final AcudienteService acudienteService;
 
+    // Agrega este método corregido a tu EstudianteService.java
+    // Agrega este método corregido a tu EstudianteService.java
     public Estudiante crearEstudiante(Estudiante estudiante, Long idAcudiente) {
-
         try {
-            validarDatosEstudiante(estudiante);
+            // Validar que el estudiante tenga persona asociada
+            if (estudiante.getPersona() == null || estudiante.getPersona().getIdPersona() == null) {
+                throw new RuntimeException("DATOS_INVALIDOS: La persona del estudiante es obligatoria");
+            }
 
-            Optional<Estudiante> estudianteExistente = estudianteRepository.findByDocumentoEstudiante(estudiante.getPersona().getDocumento());
+            // Validar datos del estudiante (ya no necesitamos validar nombre/apellido aquí
+            // porque la persona ya fue creada previamente)
+            // Verificar documento duplicado
+            Optional<Estudiante> estudianteExistente = estudianteRepository
+                    .findByDocumentoEstudiante(estudiante.getPersona().getDocumento());
 
             if (estudianteExistente.isPresent()) {
                 throw new RuntimeException("DOCUMENTO_DUPLICADO");
             }
 
+            // Obtener el acudiente
             Acudiente acudiente = acudienteService.obtenerAcudientePorId(idAcudiente);
             estudiante.setAcudiente(acudiente);
 
+            // Establecer estado por defecto si no viene
+            if (estudiante.getEstado() == null || estudiante.getEstado().isEmpty()) {
+                estudiante.setEstado("Pendiente");
+            }
+
+            // Guardar el estudiante
             Estudiante nuevoEstudiante = estudianteRepository.save(estudiante);
+            log.info("Estudiante creado exitosamente con código: {}", nuevoEstudiante.getCodigoEstudiante());
+
             return nuevoEstudiante;
 
         } catch (RuntimeException e) {
@@ -52,7 +69,8 @@ public class EstudianteService {
                     || "DOCUMENTO_DUPLICADO".equals(e.getMessage())) {
                 throw e;
             }
-            throw new RuntimeException("Error en la base de datos", e);
+            log.error("Error al crear estudiante: {}", e.getMessage(), e);
+            throw new RuntimeException("Error en la base de datos: " + e.getMessage(), e);
         }
     }
 

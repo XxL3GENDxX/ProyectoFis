@@ -1,4 +1,7 @@
-// Navegación entre secciones
+// Configuración de la API - ACTUALIZADA
+const API_URL = 'http://localhost:8080/api/estudiante';
+const API_GRADOS_URL = 'http://localhost:8080/api/grados';
+const API_GRUPOS_URL = 'http://localhost:8080/api/grupos';
 function showSection(sectionName) {
     // Ocultar todas las secciones
     const sections = document.querySelectorAll('.content-section');
@@ -30,82 +33,137 @@ function toggleMobileMenu() {
 async function enviarSolicitud(event) {
     event.preventDefault();
 
-    const personaAcudienteDATA = {
-        numeroIdentificacion: document.getElementById('numIdentificacionAcudiente').value,
-        nombre: document.getElementById('nombreAcudiente').value,
-        apellido: document.getElementById('apellidoAcudiente').value,
-        fechaNacimiento: document.getElementById('fechaNacimientoAcudiente').value, 
-    };
+    try {
+        // 1. CREAR PERSONA DEL ACUDIENTE
+        const personaAcudienteData = {
+            documento: document.getElementById('numIdentificacionAcudiente').value,
+            nombre: document.getElementById('nombreAcudiente').value,
+            apellido: document.getElementById('apellidoAcudiente').value,
+            fechaDeNacimiento: document.getElementById('fechaNacimientoAcudiente').value + 'T00:00:00',
+            genero: document.getElementById('generoAcudiente').value
+        };
 
-    const personaAcudienteResponse = await fetch("http://localhost:8080/api/persona/crear", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(personaAcudienteDATA)
-    });
-    const personaAcudienteCreada = await personaAcudienteResponse.json();
+        console.log('Creando persona acudiente:', personaAcudienteData);
 
-    const personaEstudianteDATA = {
-        numeroIdentificacion: document.getElementById('numIdentificacion').value,
-        nombre: document.getElementById('nombre').value,
-        apellido: document.getElementById('apellido').value,
-        fechaNacimiento: document.getElementById('fechaNacimiento').value, 
-    };
+        const personaAcudienteResponse = await fetch("http://localhost:8080/api/persona/crear", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(personaAcudienteData)
+        });
 
-    const personaEstudianteResponse = await fetch("http://localhost:8080/api/persona/crear", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(personaEstudianteDATA)
-    });
-    const personaEstudianteCreada = await personaEstudianteResponse.json();
+        if (!personaAcudienteResponse.ok) {
+            throw new Error('Error al crear persona del acudiente');
+        }
 
-    // 1. CREAR ACUDIENTE
-    const acudienteData = {
-        idPersona: personaAcudienteCreada.id,
-        direccion: document.getElementById('direccion').value,
-        telefono: document.getElementById('telefono').value,
-        email: document.getElementById('email').value
-    };
+        const personaAcudienteCreada = await personaAcudienteResponse.json();
+        console.log('Persona acudiente creada:', personaAcudienteCreada);
 
-    const acudienteResponse = await fetch("http://localhost:8080/api/acudiente/crear", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(acudienteData)
-    });
+        // 2. CREAR PERSONA DEL ESTUDIANTE
+        const personaEstudianteData = {
+            documento: document.getElementById('numIdentificacion').value,
+            nombre: document.getElementById('nombre').value,
+            apellido: document.getElementById('apellido').value,
+            fechaDeNacimiento: document.getElementById('fechaNacimiento').value + 'T00:00:00',
+            genero: document.getElementById('generoEstudiante').value
+        };
 
-    const acudienteCreado = await acudienteResponse.json();
+        console.log('Creando persona estudiante:', personaEstudianteData);
 
-    // 2. CREAR ESTUDIANTE usando id del acudiente
-    const estudianteData = {
-        idPersona: personaEstudianteCreada.id,
-        idAcudiente: acudienteCreado.id
-        
-    };
+        const personaEstudianteResponse = await fetch("http://localhost:8080/api/persona/crear", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(personaEstudianteData)
+        });
 
-    await fetch("http://localhost:8080/api/estudiante/crear", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(estudianteData)
-    });
+        if (!personaEstudianteResponse.ok) {
+            throw new Error('Error al crear persona del estudiante');
+        }
 
-    const estudianteCreado = await estudianteResponse.json();
+        const personaEstudianteCreada = await personaEstudianteResponse.json();
+        console.log('Persona estudiante creada:', personaEstudianteCreada);
 
-    // 3. CREAR PREINSCRIPCIÓN usando id del estudiante
-    const preinscripcionData = {
-        idEstudiante: estudianteCreado.id,
-        idAcudiente: acudienteCreado.id,
-    };
+        // 3. CREAR ACUDIENTE
+        const acudienteData = {
+            persona: {
+                idPersona: personaAcudienteCreada.idPersona
+            },
+            correoElectronico: document.getElementById('email').value,
+            telefono: document.getElementById('telefono').value,
+            estado: 'Activo'
+        };
 
-    await fetch("http://localhost:8080/api/preinscripcion/crear", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(preinscripcionData)
-    });
+        console.log('Creando acudiente:', acudienteData);
 
-    alert("¡Solicitud registrada con éxito!");
+        const acudienteResponse = await fetch("http://localhost:8080/api/acudiente/crear", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(acudienteData)
+        });
 
-    document.getElementById('formAdmision').reset();
+        if (!acudienteResponse.ok) {
+            throw new Error('Error al crear acudiente');
+        }
+
+        const acudienteCreado = await acudienteResponse.json();
+        console.log('Acudiente creado:', acudienteCreado);
+
+        // 4. CREAR ESTUDIANTE
+        const estudianteData = {
+            persona: {
+                idPersona: personaEstudianteCreada.idPersona
+            },
+            acudiente: {
+                idAcudiente: acudienteCreado.idAcudiente
+            },
+            estado: 'Pendiente'
+        };
+
+        console.log('Creando estudiante:', estudianteData);
+
+        const estudianteResponse = await fetch("http://localhost:8080/api/estudiante/crear", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(estudianteData)
+        });
+
+        if (!estudianteResponse.ok) {
+            throw new Error('Error al crear estudiante');
+        }
+
+        const estudianteCreado = await estudianteResponse.json();
+        console.log('Estudiante creado:', estudianteCreado);
+
+        // 5. CREAR PREINSCRIPCIÓN
+        const preinscripcionData = {
+            aspirante: {
+                codigoEstudiante: estudianteCreado.codigoEstudiante
+            },
+            acudiente: {
+                idAcudiente: acudienteCreado.idAcudiente
+            },
+            fechaEntrevista: new Date().toISOString()
+        };
+
+        console.log('Creando preinscripción:', preinscripcionData);
+
+        const preinscripcionResponse = await fetch("http://localhost:8080/api/preinscripcion/crear", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(preinscripcionData)
+        });
+
+        if (!preinscripcionResponse.ok) {
+            throw new Error('Error al crear preinscripción');
+        }
+
+        alert("¡Solicitud registrada con éxito!");
+        document.getElementById('formAdmision').reset();
+
+    } catch (error) {
+        console.error('Error en el proceso:', error);
+        alert("Error al registrar la solicitud: " + error.message);
+    }
 }
-
 
 // Smooth scroll para navegación
 document.addEventListener('DOMContentLoaded', function() {

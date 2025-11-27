@@ -15,24 +15,46 @@ import java.util.List;
 @Slf4j
 public class AcudienteService {
 
-    private AcudienteRepository acudienteRepository;
+    private final AcudienteRepository acudienteRepository;  // CORREGIDO: agregado final
 
     public Acudiente crearAcudiente(Acudiente acudiente) {
         try {
-            return acudienteRepository.save(acudiente);
-        } catch (Exception e) {
-            if ("ACUDIENTE_YA_EXISTE".equals(e.getMessage()) ||
-                    "DOCUMENTO_DUPLICADO".equals(e.getMessage())) {
+            // Validar que tenga persona asociada
+            if (acudiente.getPersona() == null || acudiente.getPersona().getIdPersona() == null) {
+                throw new RuntimeException("DATOS_INVALIDOS: La persona del acudiente es obligatoria");
+            }
+
+            // Validar correo electrónico
+            if (acudiente.getCorreoElectronico() == null || acudiente.getCorreoElectronico().isEmpty()) {
+                throw new RuntimeException("DATOS_INVALIDOS: El correo electrónico es obligatorio");
+            }
+
+            // Establecer estado por defecto si no viene
+            if (acudiente.getEstado() == null || acudiente.getEstado().isEmpty()) {
+                acudiente.setEstado("Activo");
+            }
+
+            log.info("Creando acudiente con correo: {}", acudiente.getCorreoElectronico());
+            Acudiente nuevoAcudiente = acudienteRepository.save(acudiente);
+            log.info("Acudiente creado exitosamente con ID: {}", nuevoAcudiente.getIdAcudiente());
+
+            return nuevoAcudiente;
+
+        } catch (RuntimeException e) {
+            if (e.getMessage().startsWith("DATOS_INVALIDOS")) {
                 throw e;
             }
-            throw new RuntimeException("Error en la base de datos", e);
+            log.error("Error al crear acudiente: {}", e.getMessage(), e);
+            throw new RuntimeException("Error en la base de datos: " + e.getMessage(), e);
         }
     }
 
+    @Transactional(readOnly = true)
     public List<Acudiente> obtenerTodosLosAcudientes() {
         return acudienteRepository.findAll();
     }
-    
+
+    @Transactional(readOnly = true)
     public Acudiente obtenerAcudientePorId(Long id) {
         return acudienteRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Acudiente no encontrado con id: " + id));

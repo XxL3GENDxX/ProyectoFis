@@ -7,11 +7,10 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import org.springframework.web.cors.CorsConfigurationSource; // Importante
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource; // Importante
-
-import java.util.Arrays; // Importante
+import java.util.Arrays;
 
 @Configuration
 public class SecurityConfig {
@@ -19,16 +18,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Desactivar CSRF para llamadas fetch desde JS (ajusta según necesites)
+                // Habilitar CORS
+                .cors(Customizer.withDefaults())
+                // Desactivar CSRF para llamadas fetch desde JS
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                // permitir acceso público a la API REST y a recursos estáticos
-                .requestMatchers(HttpMethod.POST, "/api/**", "/css/**", "/js/**", "/images/**",
-                        "/gestionarEstudiantes.html", "/**", "/index.html")
-                .permitAll()
-                // cualquier otra petición requiere autenticación
-                .anyRequest().authenticated())
-                // dejamos el httpBasic por defecto (no obligatorio si todo está en permitAll)
+                // Permitir acceso público a toda la API y recursos estáticos
+                .requestMatchers(
+                        "/api/**",
+                        "/css/**",
+                        "/js/**",
+                        "/images/**",
+                        "/**"
+                ).permitAll()
+                // Cualquier otra petición requiere autenticación
+                .anyRequest().authenticated()
+                )
+                // HTTP Basic por defecto
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
@@ -38,18 +44,33 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. Permitir el origen de tu Frontend (Live Server usa el 5500)
-        // IMPORTANTE: Pon tanto localhost como 127.0.0.1 por si acaso
-        configuration.setAllowedOrigins(Arrays.asList("http://127.0.0.1:5500", "http://localhost:5500"));
+        // Permitir orígenes del Frontend (Live Server)
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://127.0.0.1:5500",
+                "http://localhost:5500",
+                "http://127.0.0.1:5501",
+                "http://localhost:5501"
+        ));
 
-        // 2. Métodos permitidos (GET, POST, PUT, DELETE, OPTIONS)
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // Métodos permitidos
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"
+        ));
 
-        // 3. Headers permitidos (Content-Type, Authorization, etc.)
+        // Headers permitidos
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
-        // 4. Permitir credenciales (cookies, etc.) si fuera necesario
+        // Permitir credenciales
         configuration.setAllowCredentials(true);
+
+        // Exponer headers
+        configuration.setExposedHeaders(Arrays.asList(
+                "Access-Control-Allow-Origin",
+                "Access-Control-Allow-Credentials"
+        ));
+
+        // Tiempo de cache para preflight
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

@@ -16,17 +16,29 @@ import java.util.Map;
 @RequestMapping("/api/estudiante")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = { "http://127.0.0.1:5500", "http://localhost:5500" })
+@CrossOrigin(origins = {"http://127.0.0.1:5500", "http://localhost:5500"})
 public class EstudianteController {
 
     private final EstudianteService estudianteService;
 
     @PostMapping("/crear")
-    public ResponseEntity<?> crearEstudiante(@RequestBody Estudiante estudiante, Long idAcudiente) {
+    public ResponseEntity<?> crearEstudiante(@RequestBody Estudiante estudiante) {
         try {
             log.info("Creando nuevo estudiante");
+
+            // El idAcudiente ya viene en el objeto estudiante
+            Long idAcudiente = estudiante.getAcudiente() != null
+                    ? estudiante.getAcudiente().getIdAcudiente() : null;
+
+            if (idAcudiente == null) {
+                return ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .body(crearRespuestaError("El ID del acudiente es obligatorio"));
+            }
+
             Estudiante nuevoEstudiante = estudianteService.crearEstudiante(estudiante, idAcudiente);
             return ResponseEntity.status(HttpStatus.CREATED).body(nuevoEstudiante);
+
         } catch (RuntimeException e) {
             if (e.getMessage().startsWith("DATOS_INVALIDOS")) {
                 String detalleError = e.getMessage().replace("DATOS_INVALIDOS: ", "");
@@ -39,9 +51,10 @@ public class EstudianteController {
                         .status(HttpStatus.CONFLICT)
                         .body(crearRespuestaError("Ya existe un registro con este documento"));
             }
+            log.error("Error al crear estudiante", e);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(crearRespuestaError("Error en la base de datos"));
+                    .body(crearRespuestaError("Error en la base de datos: " + e.getMessage()));
         }
     }
 
@@ -57,18 +70,7 @@ public class EstudianteController {
                     .body(crearRespuestaError("Error en la base de datos"));
         }
     }
-    
-    /**
-     * Buscar y filtrar estudiantes
-     * Paso 1-9: Implementa el flujo completo del caso de uso "Mostrar Estudiantes por Filtro"
-     * 
-     * @param textoBusqueda Texto de búsqueda (Paso 1)
-     * @param genero Filtro de género (Paso 3-5)
-     * @param edadMinima Edad mínima del rango (Paso 3-5)
-     * @param edadMaxima Edad máxima del rango (Paso 3-5)
-     * @param ordenAlfabetico Orden alfabético A-Z (Paso 3-5)
-     * @return Lista de estudiantes filtrados o mensaje de error
-     */
+
     @GetMapping("/buscar")
     public ResponseEntity<?> buscarYFiltrarEstudiantes(
             @RequestParam(required = false) String textoBusqueda,
@@ -76,42 +78,37 @@ public class EstudianteController {
             @RequestParam(required = false) Integer edadMinima,
             @RequestParam(required = false) Integer edadMaxima,
             @RequestParam(required = false, defaultValue = "true") Boolean ordenAlfabetico) {
-        
+
         try {
-            log.info("Buscando estudiantes con filtros - Búsqueda: {}, Género: {}, EdadMin: {}, EdadMax: {}, Orden: {}", 
+            log.info("Buscando estudiantes con filtros - Búsqueda: {}, Género: {}, EdadMin: {}, EdadMax: {}, Orden: {}",
                     textoBusqueda, genero, edadMinima, edadMaxima, ordenAlfabetico);
-            
-            // Paso 7: El sistema consulta los estudiantes según la barra de búsqueda y los filtros aplicados
+
             List<Estudiante> estudiantes = estudianteService.buscarYFiltrarEstudiantes(
-                    textoBusqueda, 
-                    genero, 
-                    edadMinima, 
-                    edadMaxima, 
+                    textoBusqueda,
+                    genero,
+                    edadMinima,
+                    edadMaxima,
                     ordenAlfabetico
             );
-            
-            // Paso 8: El sistema verifica si se encontraron resultados
+
             if (estudiantes.isEmpty()) {
-                // Flujo Alternativo: No se encontraron resultados
                 log.info("No se encontraron estudiantes con los criterios especificados");
                 return ResponseEntity
                         .status(HttpStatus.NOT_FOUND)
                         .body(crearRespuestaError("No se encontró ningún estudiante con los criterios especificados"));
             }
-            
-            // Paso 9: El sistema muestra los estudiantes encontrados
+
             log.info("Se encontraron {} estudiantes", estudiantes.size());
             return ResponseEntity.ok(estudiantes);
-            
+
         } catch (Exception e) {
-            // Flujo Alternativo: Error al conectar con la base de datos
             log.error("Error al buscar y filtrar estudiantes", e);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(crearRespuestaError("Error en la base de datos"));
         }
     }
-    
+
     @GetMapping("/{codigoEstudiante}")
     public ResponseEntity<?> obtenerEstudiantePorCodigo(@PathVariable Long codigoEstudiante) {
         try {
@@ -132,26 +129,26 @@ public class EstudianteController {
             @PathVariable Long idGrupo) {
         try {
             log.info("Asignando estudiante {} al grupo {}", codigoEstudiante, idGrupo);
-            
+
             Estudiante estudianteActualizado = estudianteService.asignarEstudianteAGrupo(
-                    codigoEstudiante, 
+                    codigoEstudiante,
                     idGrupo
             );
-            
+
             return ResponseEntity.ok(crearRespuestaExito(
-                    "Estudiante asignado exitosamente", 
+                    "Estudiante asignado exitosamente",
                     estudianteActualizado
             ));
-            
+
         } catch (RuntimeException e) {
             log.error("Error al asignar estudiante: {}", e.getMessage());
-            
+
             if ("GRUPO_COMPLETO".equals(e.getMessage())) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
                         .body(crearRespuestaError("Grupo completo"));
             }
-            
+
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(crearRespuestaError("Error en la base de datos"));
@@ -162,62 +159,62 @@ public class EstudianteController {
     public ResponseEntity<?> desvincularEstudianteDeGrupo(@PathVariable Long codigoEstudiante) {
         try {
             log.info("Desvinculando estudiante {} de su grupo", codigoEstudiante);
-            
+
             Estudiante estudianteActualizado = estudianteService.desvincularEstudianteDeGrupo(codigoEstudiante);
-            
+
             return ResponseEntity.ok(crearRespuestaExito(
-                    "Estudiante desvinculado satisfactoriamente", 
+                    "Estudiante desvinculado satisfactoriamente",
                     estudianteActualizado
             ));
-            
+
         } catch (RuntimeException e) {
             log.error("Error al desvincular estudiante: {}", e.getMessage());
-            
+
             if ("ESTUDIANTE_SIN_GRUPO".equals(e.getMessage())) {
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
                         .body(crearRespuestaError("El estudiante no tiene grupo asignado"));
             }
-            
+
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(crearRespuestaError("Error en la base de datos"));
         }
     }
-    
+
     @PutMapping("/{codigoEstudiante}")
     public ResponseEntity<?> modificarEstudiante(
             @PathVariable Long codigoEstudiante,
             @RequestBody Estudiante estudiante) {
         try {
             log.info("Modificando estudiante con código: {}", codigoEstudiante);
-            
+
             Estudiante estudianteActualizado = estudianteService.modificarEstudiante(
-                    codigoEstudiante, 
+                    codigoEstudiante,
                     estudiante
             );
-            
+
             return ResponseEntity.ok(crearRespuestaExito(
-                    "Estudiante modificado exitosamente", 
+                    "Estudiante modificado exitosamente",
                     estudianteActualizado
             ));
-            
+
         } catch (RuntimeException e) {
             log.error("Error al modificar estudiante: {}", e.getMessage());
-            
+
             if (e.getMessage().startsWith("DATOS_INVALIDOS")) {
                 String detalleError = e.getMessage().replace("DATOS_INVALIDOS: ", "");
                 return ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
                         .body(crearRespuestaError("Datos ingresados no válidos: " + detalleError));
             }
-            
+
             if ("DOCUMENTO_DUPLICADO".equals(e.getMessage())) {
                 return ResponseEntity
                         .status(HttpStatus.CONFLICT)
                         .body(crearRespuestaError("Ya existe un registro con este documento"));
             }
-            
+
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(crearRespuestaError("Error en la base de datos"));
@@ -228,17 +225,17 @@ public class EstudianteController {
     public ResponseEntity<?> cambiarEstadoEstudiante(@PathVariable Long codigoEstudiante) {
         try {
             log.info("Cambiando estado del estudiante con código: {}", codigoEstudiante);
-            
+
             Estudiante estudianteActualizado = estudianteService.cambiarEstadoEstudiante(codigoEstudiante);
-            
+
             return ResponseEntity.ok(crearRespuestaExito(
-                    "Estado modificado exitosamente", 
+                    "Estado modificado exitosamente",
                     estudianteActualizado
             ));
-            
+
         } catch (RuntimeException e) {
             log.error("Error al cambiar estado del estudiante: {}", e.getMessage());
-            
+
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(crearRespuestaError("Error en la base de datos"));
