@@ -254,7 +254,7 @@ function generarBotonesOpciones(estudiante) {
         const btnDesvincularClass = !esActivo || !tieneGrupo ? 'btn btn-danger btn-icon disabled' : 'btn btn-danger btn-icon';
         const btnDesvincularDisabled = !esActivo || !tieneGrupo ? 'disabled' : '';
         const btnDesvincularTitle = !esActivo ? 'Estudiante inactivo' : (!tieneGrupo ? 'El estudiante no tiene grupo asignado' : 'Desvincular de grupo');
-        const btnDesvincularOnclick = !esActivo || !tieneGrupo ? '' : `onclick="desvincularGrupo(${estudiante.codigoEstudiante}, '${estudiante.nombre} ${estudiante.apellido}')"`;
+        const btnDesvincularOnclick = !esActivo || !tieneGrupo ? '' : `onclick="desvincularGrupo(${estudiante.codigoEstudiante}, '${estudiante.persona.nombre} ${estudiante.persona.apellido}')"`;
         
         return `
             <button class="${btnAsignarClass}" ${btnAsignarOnclick} title="${btnAsignarTitle}" ${btnAsignarDisabled}>
