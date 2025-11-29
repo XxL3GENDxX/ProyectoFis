@@ -45,7 +45,8 @@ async function handleLogin(event) {
         if (response.ok) { 
             
             console.log('Login exitoso para usuario:', usuario);
-            window.location.href = 'gestionarEstudiantes.html';
+            localStorage.setItem('rolUsuario', resultadoLogin.rol);
+            window.location.href = 'panelGestion.html';
 
         } else {
             

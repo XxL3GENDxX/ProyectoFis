@@ -28,4 +28,8 @@ public class GrupoService {
         return grupoRepository.findById(idGrupo)
                 .orElseThrow(() -> new RuntimeException("Grupo no encontrado"));
     }
+
+    public Grupo crearGrupo(Grupo grupo) {
+        return grupoRepository.save(grupo);
+    }
 }

@@ -1,3 +1,25 @@
+
+const MODULOS_POR_ROL = {
+    'Administrador': [
+        'gestionarEstudiantes.html',
+        'gestionarGrupos.html',
+        'gestionarLogros.html',
+        'gestionarObservador.html',
+        'gestionarUsuarios.html',
+        'gestionarPreinscripciones.html'
+    ],
+    'Profesor': [
+        'gestionarEstudiantes.html',
+        'gestionarGrupos.html',
+        'gestionarLogros.html',
+        'gestionarObservador.html'
+    ],
+    'Acudiente': [
+        'gestionarEstudiantes.html',
+        'gestionarObservador.html',
+        'gestionarLogros.html'
+    ]
+};
 // Toggle sidebar para móvil
 function toggleSidebar() {
     const sidebar = document.getElementById('sidebar');
@@ -11,28 +33,48 @@ function toggleSidebar() {
 function setupMenuItems() {
     const menuItems = document.querySelectorAll('.menu-item');
     
+    const rolUsuario = localStorage.getItem('rolUsuario');
+    const modulosPermitidos = MODULOS_POR_ROL[rolUsuario] || [];
+
     menuItems.forEach(item => {
+        // 1. PRIMERO: Debemos obtener el href antes de usarlo
+        const href = item.getAttribute('href');
+
+        // 2. Validación de seguridad: Si no hay href o es '#', no filtramos (o lo manejamos distinto)
+        if (href && href !== '#' && !href.includes('inicioSesion.html')) {
+            
+            // 3. Ahora sí podemos usar la variable 'href'
+            const tienePermiso = modulosPermitidos.some(modulo => href.includes(modulo));
+            
+            if (!tienePermiso) {
+                item.style.display = 'none';
+                // Si lo ocultamos, no tiene sentido agregarle el evento click, así que retornamos
+                return; 
+            } else {
+                item.style.display = 'flex';
+            }
+        }
+
+        // 4. Configuración del evento Click (solo para los visibles)
         item.addEventListener('click', (e) => {
-            // Solo remover active si es un enlace interno (no un href real)
-            if (item.getAttribute('href').startsWith('http') || 
-                item.getAttribute('href').endsWith('.html')) {
-                // Dejar que navegue naturalmente
+            // Aquí 'href' ya es accesible porque está en el cierre (closure) de la función superior
+            
+            if (href && (href.startsWith('http') || href.endsWith('.html'))) {
                 return;
             }
             
-            // Remover clase active de todos los items
             menuItems.forEach(i => i.classList.remove('active'));
-            
-            // Agregar clase active solo al item clickeado
             item.classList.add('active');
             
-            // Cerrar sidebar en móvil
             if (window.innerWidth <= 768) {
                 toggleSidebar();
             }
         });
     });
 }
+
+    
+
 
 // Actualizar menú activo cuando se carga una página
 function updateActiveMenuItem() {
