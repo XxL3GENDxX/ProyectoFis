@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -30,6 +31,14 @@ public class GrupoService {
     }
 
     public Grupo crearGrupo(Grupo grupo) {
-        return grupoRepository.save(grupo);
+        Optional<Grupo> grupoExiste = grupoRepository.findByGradoIdAndNumeroGrupo(grupo.getGrado().getIdGrado(), grupo.getNumeroGrupo());
+
+        if (grupoExiste.isEmpty()) {
+            throw new RuntimeException("Ya existe un grupo con el mismo nombre en este grado");
+        } else {
+            log.info("Creando nuevo grupo: {}", grupo);
+            return grupoRepository.save(grupo);
+        }
+
     }
 }

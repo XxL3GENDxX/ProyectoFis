@@ -39,4 +39,22 @@ public class GrupoController {
         response.put("mensaje", mensaje);
         return response;
     }
+
+    @PostMapping("/crear")
+    public ResponseEntity<?> crearGrupo(@RequestBody Grupo grupo) {
+        try {
+            Grupo nuevoGrupo = grupoService.crearGrupo(grupo);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nuevoGrupo);
+        } catch (RuntimeException e) {
+            log.error("Error al crear el grupo", e);
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(crearRespuestaError(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error inesperado al crear el grupo", e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
 }

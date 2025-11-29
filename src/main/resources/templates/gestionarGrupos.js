@@ -365,7 +365,7 @@ async function guardarGrupo() {
             });
         } else {
             // Crear nuevo grupo
-            response = await fetch(API_GRUPOS_URL, {
+            response = await fetch(`${API_GRUPOS_URL}/crear`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(grupoData)
@@ -483,6 +483,8 @@ async function cargarGradosEnModal() {
         mostrarMensaje('Error', 'Error al cargar los grados disponibles', 'error');
     }
 }
+
+
 
 // Funciones de estado de UI
 function mostrarEstadoVacio() {
