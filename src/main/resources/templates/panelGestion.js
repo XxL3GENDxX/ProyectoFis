@@ -6,13 +6,15 @@ const MODULOS_POR_ROL = {
         'gestionarLogros.html',
         'gestionarObservador.html',
         'gestionarUsuarios.html',
-        'gestionarPreinscripciones.html'
+        'gestionarPreinscripciones.html',
+        'gestionarCalificaciones.html'
     ],
     'Profesor': [
         'gestionarEstudiantes.html',
         'gestionarGrupos.html',
         'gestionarLogros.html',
-        'gestionarObservador.html'
+        'gestionarObservador.html',
+        'gestionarCalificaciones.html'
     ],
     'Acudiente': [
         'gestionarEstudiantes.html',

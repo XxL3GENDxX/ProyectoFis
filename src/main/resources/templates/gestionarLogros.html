@@ -47,6 +47,10 @@
                 <i class="fas fa-trophy"></i>
                 <span>Gestor de logros</span>
             </a>
+            <a href="gestionarCalificaciones.html" class="menu-item active">
+                <i class="fas fa-star"></i>
+                <span>Gestor de calificaciones</span>
+            </a>
             <a href="gestionarObservador.html" class="menu-item">
                 <i class="fas fa-eye"></i>
                 <span>Gestor de observador</span>
@@ -153,15 +157,14 @@
                 <form id="form-logro" onsubmit="return false;">
                     <div class="form-group">
                         <label for="logro-nombre">Nombre del Logro:</label>
-                        <input type="text" id="logro-nombre" class="form-input" 
-                               placeholder="Ej: Reconoce emociones" required maxlength="200">
+                        <input type="text" id="logro-nombre" class="form-input" placeholder="Ej: Reconoce emociones"
+                            required maxlength="200">
                     </div>
 
                     <div class="form-group">
                         <label for="logro-descripcion">Descripción:</label>
-                        <textarea id="logro-descripcion" class="form-textarea" 
-                                  placeholder="Describe el logro en detalle..." 
-                                  rows="5" required maxlength="500"></textarea>
+                        <textarea id="logro-descripcion" class="form-textarea"
+                            placeholder="Describe el logro en detalle..." rows="5" required maxlength="500"></textarea>
                         <small class="form-help">Máximo 500 caracteres</small>
                     </div>
                 </form>
@@ -186,7 +189,7 @@
             <div class="modal-body text-center">
                 <p>¿Está seguro que desea eliminar el logro <strong id="nombre-logro-eliminar"></strong>?</p>
                 <p class="warning-text">
-                    <i class="fas fa-exclamation-circle"></i> 
+                    <i class="fas fa-exclamation-circle"></i>
                     Esta acción no se puede deshacer
                 </p>
             </div>
@@ -214,7 +217,7 @@
             </div>
         </div>
     </div>
-    
+
     <script src="sidebarCommon.js"></script>
     <script src="gestionarLogros.js"></script>
 </body>
