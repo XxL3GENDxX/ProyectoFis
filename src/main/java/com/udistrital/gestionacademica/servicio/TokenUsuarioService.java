@@ -54,6 +54,12 @@ public class TokenUsuarioService {
     public TokenUsuario crear(TokenUsuario tokenUsuario) {
         log.info("Creando nuevo usuario: {}", tokenUsuario.getNombreUsuario());
         
+        // Validar que el nombre de usuario sea único
+        if (tokenUsuarioRepository.findByNombreUsuario(tokenUsuario.getNombreUsuario()).isPresent()) {
+            log.warn("Intento de crear usuario con nombre de usuario duplicado: {}", tokenUsuario.getNombreUsuario());
+            throw new IllegalArgumentException("El nombre de usuario ya existe");
+        }
+        
         if (tokenUsuario.getEstado() == null) {
             tokenUsuario.setEstado(true);
         }
@@ -71,6 +77,12 @@ public class TokenUsuarioService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado con ID: " + id));
         
         if (tokenUsuarioActualizado.getNombreUsuario() != null && !tokenUsuarioActualizado.getNombreUsuario().isEmpty()) {
+            // Validar que el nuevo nombre de usuario no exista en otro usuario
+            var usuarioConNombreDuplicado = tokenUsuarioRepository.findByNombreUsuario(tokenUsuarioActualizado.getNombreUsuario());
+            if (usuarioConNombreDuplicado.isPresent() && !usuarioConNombreDuplicado.get().getIdTokenUsuario().equals(id)) {
+                log.warn("Intento de editar usuario con nombre de usuario duplicado: {}", tokenUsuarioActualizado.getNombreUsuario());
+                throw new IllegalArgumentException("El nombre de usuario ya existe");
+            }
             usuario.setNombreUsuario(tokenUsuarioActualizado.getNombreUsuario());
         }
         

@@ -140,13 +140,12 @@ function abrirModalCrear() {
 
 // Confirmar creación de usuario
 async function confirmarCrearUsuario() {
-    const nombreCompleto = document.getElementById('crear-nombre-completo').value.trim();
     const nombreUsuario = document.getElementById('crear-nombre-usuario').value.trim();
     const contrasena = document.getElementById('crear-contrasena').value;
     const rol = document.getElementById('crear-rol').value;
     const estado = document.getElementById('crear-estado').value === 'Activo';
     
-    if (!nombreCompleto || !nombreUsuario || !contrasena || !rol) {
+    if (!nombreUsuario || !contrasena || !rol) {
         mostrarMensaje('Advertencia', 'Por favor complete todos los campos obligatorios', 'warning');
         return;
     }
@@ -156,17 +155,12 @@ async function confirmarCrearUsuario() {
         return;
     }
     
-    // Dividir nombre completo en nombre y apellido
-    const partes = nombreCompleto.split(' ');
-    const nombre = partes[0];
-    const apellido = partes.slice(1).join(' ') || partes[0];
-    
     try {
-        // 1. Crear persona primero
+        // Crear usuario directamente
+        // Se usará el nombreUsuario como nombre de la persona
         const personaData = {
-            nombre: nombre,
-            apellido: apellido,
-            documento: nombreUsuario // Usar el nombre de usuario como documento temporal
+            nombre: nombreUsuario,
+            apellido: ""
         };
         
         const personaResponse = await fetch('http://localhost:8080/api/persona/crear', {
@@ -176,12 +170,13 @@ async function confirmarCrearUsuario() {
         });
         
         if (!personaResponse.ok) {
-            throw new Error('Error al crear la persona');
+            const errorData = await personaResponse.json();
+            throw new Error(errorData.mensaje || 'Error al crear la persona');
         }
         
         const personaCreada = await personaResponse.json();
         
-        // 2. Crear usuario con el idPersona
+        // Crear usuario con el idPersona
         const usuarioData = {
             nombreUsuario: nombreUsuario,
             contrasena: contrasena,
@@ -209,7 +204,7 @@ async function confirmarCrearUsuario() {
         
     } catch (error) {
         console.error('Error al crear usuario:', error);
-        mostrarMensaje('Error', 'Error en la base de datos', 'error');
+        mostrarMensaje('Error', error.message || 'Error en la base de datos', 'error');
     }
 }
 
@@ -234,10 +229,6 @@ async function editarUsuario(idUsuario) {
 }
 
 function cargarDatosEnFormularioEditar(usuario) {
-    const nombreCompleto = usuario.persona ? 
-        `${usuario.persona.nombre} ${usuario.persona.apellido}` : '';
-    
-    document.getElementById('editar-nombre-completo').value = nombreCompleto;
     document.getElementById('editar-nombre-usuario').value = usuario.nombreUsuario || '';
     document.getElementById('editar-contrasena').value = '';
     document.getElementById('editar-rol').value = usuario.rol || '';
@@ -246,13 +237,12 @@ function cargarDatosEnFormularioEditar(usuario) {
 
 // Confirmar edición de usuario
 async function confirmarEditarUsuario() {
-    const nombreCompleto = document.getElementById('editar-nombre-completo').value.trim();
     const nombreUsuario = document.getElementById('editar-nombre-usuario').value.trim();
     const contrasena = document.getElementById('editar-contrasena').value;
     const rol = document.getElementById('editar-rol').value;
     const estado = document.getElementById('editar-estado').value === 'Activo';
     
-    if (!nombreCompleto || !nombreUsuario || !rol) {
+    if (!nombreUsuario || !rol) {
         mostrarMensaje('Advertencia', 'Por favor complete todos los campos obligatorios', 'warning');
         return;
     }

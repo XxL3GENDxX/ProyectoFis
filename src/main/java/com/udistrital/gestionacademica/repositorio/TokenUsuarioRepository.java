@@ -14,4 +14,7 @@ public interface TokenUsuarioRepository extends JpaRepository<TokenUsuario, Long
     @Query("SELECT t FROM TokenUsuario t WHERE t.nombreUsuario = :nombreUsuario AND t.contrasena = :contrasena")
     java.util.Optional<TokenUsuario> findByNombreUsuarioAndContrasena(@Param("nombreUsuario") String nombreUsuario, @Param("contrasena") String contrasena);
     
+    @Query("SELECT t FROM TokenUsuario t WHERE t.nombreUsuario = :nombreUsuario")
+    java.util.Optional<TokenUsuario> findByNombreUsuario(@Param("nombreUsuario") String nombreUsuario);
+    
 }

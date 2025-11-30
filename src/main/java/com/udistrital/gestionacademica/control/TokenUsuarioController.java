@@ -133,6 +133,18 @@ public class TokenUsuarioController {
             TokenUsuario usuarioCreado = tokenUsuarioService.crear(tokenUsuario);
             return new ResponseEntity<>(usuarioCreado, HttpStatus.CREATED);
             
+        } catch (IllegalArgumentException e) {
+            String mensaje = e.getMessage();
+            if (mensaje != null && mensaje.contains("ya existe")) {
+                return new ResponseEntity<>(
+                    Map.of("error", true, "mensaje", "El nombre de usuario ya existe"),
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+            return new ResponseEntity<>(
+                Map.of("error", true, "mensaje", mensaje),
+                HttpStatus.BAD_REQUEST
+            );
         } catch (Exception e) {
             log.error("Error al crear usuario: {}", e.getMessage());
             return new ResponseEntity<>(
@@ -149,9 +161,21 @@ public class TokenUsuarioController {
             TokenUsuario usuarioEditado = tokenUsuarioService.editar(id, tokenUsuario);
             return new ResponseEntity<>(usuarioEditado, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
+            String mensaje = e.getMessage();
+            if (mensaje != null && mensaje.contains("ya existe")) {
+                return new ResponseEntity<>(
+                    Map.of("error", true, "mensaje", "El nombre de usuario ya existe"),
+                    HttpStatus.BAD_REQUEST
+                );
+            } else if (mensaje != null && mensaje.contains("no encontrado")) {
+                return new ResponseEntity<>(
+                    Map.of("error", true, "mensaje", "Usuario no encontrado"),
+                    HttpStatus.NOT_FOUND
+                );
+            }
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Usuario no encontrado"),
-                HttpStatus.NOT_FOUND
+                Map.of("error", true, "mensaje", mensaje),
+                HttpStatus.BAD_REQUEST
             );
         } catch (Exception e) {
             log.error("Error al editar usuario: {}", e.getMessage());
