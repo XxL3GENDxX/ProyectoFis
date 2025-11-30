@@ -57,4 +57,44 @@ public class GrupoController {
                     .body(crearRespuestaError("Error en la base de datos"));
         }
     }
+
+    // Cambia esto: @PutMapping("/actualizar/{idGrupo}")
+// Por esto (Estándar REST):
+    @PutMapping("actualizar/{idGrupo}")
+    public ResponseEntity<?> actualizarGrupo(@PathVariable Long idGrupo, @RequestBody Grupo grupo) {
+        try {
+            
+            grupo.setIdGrupo(idGrupo);
+
+            Grupo grupoActualizado = grupoService.actualizarGrupo(grupo);
+            return ResponseEntity.ok(grupoActualizado);
+        } catch (RuntimeException e) {
+            log.error("Error al actualizar el grupo", e);
+            // ... resto de tu catch
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(crearRespuestaError(e.getMessage()));
+        } catch (Exception e) {
+            // ... resto de tu catch
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
+    @DeleteMapping("/eliminar/{idGrupo}")
+    public ResponseEntity<?> eliminarGrupo(@PathVariable Long idGrupo) {
+        try {
+            grupoService.eliminarGrupo(idGrupo);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            log.error("Error al eliminar el grupo", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(crearRespuestaError(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error inesperado al eliminar el grupo", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
+
+    
+
 }

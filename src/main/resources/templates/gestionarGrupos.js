@@ -130,27 +130,30 @@ async function mostrarGruposPorGrado(idGrado, query) {
 }
 
 // Mostrar múltiples grados
-async function mostrarMultiplesGrados(grados, query) {
+// Cargar grados en el modal
+async function cargarGradosEnModal() {
     try {
-        const todosLosGrupos = [];
+        const response = await fetch(API_GRADOS_URL);
         
-        for (const grado of grados) {
-            const response = await fetch(`${API_GRUPOS_URL}/grado/${grado.idGrado}`);
-            if (response.ok) {
-                const grupos = await response.json();
-                todosLosGrupos.push(...grupos);
-            }
+        if (!response.ok) {
+            throw new Error('Error al cargar grados');
         }
 
-        if (todosLosGrupos.length === 0) {
-            mostrarSinResultados();
-        } else {
-            mostrarListaGrupos(todosLosGrupos, query);
-        }
+        const grados = await response.json();
+        const select = document.getElementById('grupo-grado');
+
+        select.innerHTML = '<option value="">Seleccione un grado</option>';
+
+        grados.forEach(grado => {
+            const option = document.createElement('option');
+            option.value = grado.idGrado; // ← IMPORTANTE: Guardar el ID como value
+            option.textContent = grado.nombreGrado; // ← Mostrar el nombre
+            select.appendChild(option);
+        });
 
     } catch (error) {
-        console.error('Error:', error);
-        mostrarMensaje('Error', 'Error al cargar grupos', 'error');
+        console.error('Error al cargar grados:', error);
+        mostrarMensaje('Error', 'Error al cargar los grados disponibles', 'error');
     }
 }
 
@@ -335,8 +338,9 @@ function editarGrupo() {
 }
 
 // Guardar grupo (crear o editar)
+// Guardar grupo (crear o editar)
 async function guardarGrupo() {
-    const idGrado = document.getElementById('grupo-grado').value;
+    const idGrado = document.getElementById('grupo-grado').value; // Ya viene como ID
     const numeroGrupo = document.getElementById('grupo-numero').value;
     const directorGrupo = document.getElementById('grupo-director').value.trim();
     const limiteEstudiantes = document.getElementById('grupo-limite').value;
@@ -347,7 +351,10 @@ async function guardarGrupo() {
     }
 
     const grupoData = {
-        grado: { idGrado: parseInt(idGrado) },
+        grado: { 
+            idGrado: parseInt(idGrado) // Convertir a número entero
+        },
+        idGrupo: (modoEdicion && grupoSeleccionado) ? grupoSeleccionado.idGrupo : null,
         numeroGrupo: parseInt(numeroGrupo),
         directorGrupo: directorGrupo || null,
         limiteEstudiantes: parseInt(limiteEstudiantes)
@@ -358,7 +365,7 @@ async function guardarGrupo() {
         
         if (modoEdicion && grupoSeleccionado) {
             // Actualizar grupo existente
-            response = await fetch(`${API_GRUPOS_URL}/${grupoSeleccionado.idGrupo}`, {
+            response = await fetch(`${API_GRUPOS_URL}/actualizar/${grupoSeleccionado.idGrupo}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(grupoData)
@@ -414,10 +421,13 @@ async function eliminarGrupo() {
     }
 
     try {
-        const response = await fetch(`${API_GRUPOS_URL}/${grupoSeleccionado.idGrupo}`, {
-            method: 'DELETE'
+        const response = await fetch(`${API_GRUPOS_URL}/eliminar/${grupoSeleccionado.idGrupo}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
-
+    
         cerrarModal('modal-confirmar-eliminar');
 
         if (response.ok) {

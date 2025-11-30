@@ -31,14 +31,31 @@ public class GrupoService {
     }
 
     public Grupo crearGrupo(Grupo grupo) {
-        Optional<Grupo> grupoExiste = grupoRepository.findByGradoIdAndNumeroGrupo(grupo.getGrado().getIdGrado(), grupo.getNumeroGrupo());
+        Optional<Grupo> grupoExiste = grupoRepository.findByGradoIdAndNumeroGrupo(grupo.getGrado().getIdGrado(),
+                grupo.getNumeroGrupo());
 
         if (grupoExiste.isEmpty()) {
-            throw new RuntimeException("Ya existe un grupo con el mismo nombre en este grado");
-        } else {
-            log.info("Creando nuevo grupo: {}", grupo);
             return grupoRepository.save(grupo);
+        } else {
+            throw new RuntimeException("Ya existe un grupo con el mismo nombre en este grado");
+
         }
 
+    }
+
+    public Grupo actualizarGrupo(Grupo grupo) {
+        Grupo grupoExistente = obtenerGrupoPorId(grupo.getIdGrupo());
+
+        grupoExistente.setGrado(grupo.getGrado());
+        grupoExistente.setNumeroGrupo(grupo.getNumeroGrupo());
+        grupoExistente.setLimiteEstudiantes(grupo.getLimiteEstudiantes());
+        grupoExistente.setDirectorGrupo(grupo.getDirectorGrupo());
+
+        return grupoRepository.save(grupoExistente);
+    }
+
+    public void eliminarGrupo(Long idGrupo) {
+        Grupo grupoExistente = obtenerGrupoPorId(idGrupo);
+        grupoRepository.delete(grupoExistente);
     }
 }
