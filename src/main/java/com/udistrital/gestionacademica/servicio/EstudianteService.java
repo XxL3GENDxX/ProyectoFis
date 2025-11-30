@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -382,6 +383,45 @@ public class EstudianteService {
                 log.info("Cambiando estado a Inactivo para estudiante {}", codigoEstudiante);
             }
 
+            Estudiante estudianteActualizado = estudianteRepository.save(estudiante);
+
+            log.info("Estado del estudiante {} actualizado exitosamente a: {}",
+                    codigoEstudiante, estudianteActualizado.getEstado());
+
+            return estudianteActualizado;
+
+        } catch (RuntimeException e) {
+            if ("Estudiante no encontrado".equals(e.getMessage())) {
+                throw e;
+            }
+            log.error("Error al cambiar estado del estudiante: {}", e.getMessage());
+            throw new RuntimeException("Error en la base de datos", e);
+        }
+    }
+
+    // Agregar este método al EstudianteService existente:
+    /**
+     * Cambiar estado del estudiante directamente a un valor específico (no
+     * toggle, sino asignar el estado exacto)
+     */
+    public Estudiante cambiarEstadoEstudianteDirecto(Long codigoEstudiante, String nuevoEstado) {
+        log.info("Cambiando estado del estudiante {} a: {}", codigoEstudiante, nuevoEstado);
+
+        try {
+            Estudiante estudiante = estudianteRepository.findById(codigoEstudiante)
+                    .orElseThrow(() -> new RuntimeException("Estudiante no encontrado"));
+
+            // Validar que el estado sea válido
+            List<String> estadosValidos = Arrays.asList("Pendiente", "Activo", "Inactivo", "Rechazado");
+
+            if (!estadosValidos.contains(nuevoEstado)) {
+                throw new RuntimeException("Estado no válido: " + nuevoEstado);
+            }
+
+            log.info("Estado actual del estudiante {}: {}", codigoEstudiante, estudiante.getEstado());
+            log.info("Cambiando a: {}", nuevoEstado);
+
+            estudiante.setEstado(nuevoEstado);
             Estudiante estudianteActualizado = estudianteRepository.save(estudiante);
 
             log.info("Estado del estudiante {} actualizado exitosamente a: {}",
