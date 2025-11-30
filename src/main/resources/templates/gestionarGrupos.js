@@ -494,6 +494,139 @@ async function cargarGradosEnModal() {
     }
 }
 
+// Agregar esta función para generar el listado PDF
+async function generarListado() {
+    if (!grupoSeleccionado) {
+        mostrarMensaje('Advertencia', 'No hay ningún grupo seleccionado', 'warning');
+        return;
+    }
+
+    try {
+        mostrarMensaje('Información', 'Generando PDF...', 'info');
+        
+        // Hacer la petición al backend para generar el PDF
+        const response = await fetch(`${API_GRUPOS_URL}/${grupoSeleccionado.idGrupo}/generar-listado-pdf`);
+        
+        if (!response.ok) {
+            throw new Error('Error al generar el PDF');
+        }
+        
+        // Obtener el blob del PDF
+        const pdfBlob = await response.blob();
+        
+        // Crear una URL temporal para el blob
+        const pdfUrl = URL.createObjectURL(pdfBlob);
+        
+        // Abrir modal de previsualización
+        abrirModalPrevisualizacionPDF(pdfUrl, pdfBlob);
+        
+    } catch (error) {
+        console.error('Error al generar listado:', error);
+        mostrarMensaje('Error', 'Error al generar el listado PDF', 'error');
+    }
+}
+
+/**
+ * Abre un modal con previsualización del PDF y opción de descarga
+ */
+function abrirModalPrevisualizacionPDF(pdfUrl, pdfBlob) {
+    // Cerrar modal existente si está abierto
+    const modalExistente = document.getElementById('modal-previsualizacion-pdf');
+    if (modalExistente) {
+        modalExistente.remove();
+    }
+    
+    // Crear el modal
+    const modal = document.createElement('div');
+    modal.id = 'modal-previsualizacion-pdf';
+    modal.className = 'modal show';
+    modal.style.display = 'flex';
+    
+    modal.innerHTML = `
+        <div class="modal-content modal-pdf">
+            <div class="modal-header">
+                <h2><i class="fas fa-file-pdf"></i> Previsualización del Listado</h2>
+                <button class="modal-close" onclick="cerrarModalPDF()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body modal-body-pdf">
+                <div class="pdf-controls">
+                    <button class="btn btn-success" onclick="descargarPDF()">
+                        <i class="fas fa-download"></i> Descargar PDF
+                    </button>
+                    <button class="btn btn-secondary" onclick="imprimirPDF()">
+                        <i class="fas fa-print"></i> Imprimir
+                    </button>
+                </div>
+                <div class="pdf-viewer">
+                    <iframe id="pdf-iframe" src="${pdfUrl}" type="application/pdf" width="100%" height="100%">
+                        <p>Su navegador no puede mostrar PDFs. 
+                           <a href="${pdfUrl}" download>Haga clic aquí para descargar el PDF</a>
+                        </p>
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Guardar referencia al blob para descarga
+    window.currentPdfBlob = pdfBlob;
+    window.currentPdfUrl = pdfUrl;
+}
+
+/**
+ * Cierra el modal de previsualización de PDF
+ */
+function cerrarModalPDF() {
+    const modal = document.getElementById('modal-previsualizacion-pdf');
+    if (modal) {
+        // Liberar la URL del objeto
+        if (window.currentPdfUrl) {
+            URL.revokeObjectURL(window.currentPdfUrl);
+        }
+        modal.remove();
+    }
+}
+
+/**
+ * Descarga el PDF generado
+ */
+function descargarPDF() {
+    if (!window.currentPdfBlob || !grupoSeleccionado) {
+        mostrarMensaje('Error', 'No hay PDF disponible para descargar', 'error');
+        return;
+    }
+    
+    // Crear nombre de archivo
+    const nombreArchivo = `Listado_${grupoSeleccionado.grado.nombreGrado.replace(/ /g, '_')}_Grupo${grupoSeleccionado.numeroGrupo}.pdf`;
+    
+    // Crear enlace temporal para descarga
+    const link = document.createElement('a');
+    link.href = window.currentPdfUrl;
+    link.download = nombreArchivo;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    mostrarMensaje('Éxito', 'PDF descargado exitosamente', 'success');
+}
+
+/**
+ * Imprime el PDF actual
+ */
+function imprimirPDF() {
+    const iframe = document.getElementById('pdf-iframe');
+    if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.print();
+    } else {
+        // Fallback: abrir en nueva ventana para imprimir
+        window.open(window.currentPdfUrl, '_blank');
+    }
+}
+
 
 
 // Funciones de estado de UI

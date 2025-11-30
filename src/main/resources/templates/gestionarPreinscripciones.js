@@ -8,6 +8,7 @@ function toggleSidebar() {
 
 // Configuración de la API
 const API_URL = 'http://localhost:8080/api/preinscripcion';
+const API_ESTUDIANTE_URL = 'http://localhost:8080/api/estudiante';
 
 // Estado global
 let preinscripcionesData = [];
@@ -24,9 +25,15 @@ document.addEventListener('DOMContentLoaded', function() {
 function inicializarEventos() {
     document.getElementById('txt-buscar-preinscripcion').addEventListener('input', function(e) {
         clearTimeout(timeoutBusqueda);
-        timeoutBusqueda = setTimeout(() => {
-            filtrarPreinscripciones(e.target.value);
-        }, 300);
+        const query = e.target.value.trim();
+        
+        if (query.length >= 2) {
+            timeoutBusqueda = setTimeout(() => {
+                buscarPreinscripciones(query);
+            }, 500);
+        } else if (query.length === 0) {
+            mostrarTabla(preinscripcionesData);
+        }
     });
 
     document.getElementById('btn-confirmar-programar').addEventListener('click', confirmarProgramarEntrevista);
@@ -47,6 +54,8 @@ async function cargarPreinscripciones() {
         const preinscripciones = await response.json();
         preinscripcionesData = preinscripciones;
         
+        console.log('Preinscripciones cargadas:', preinscripciones);
+        
         if (preinscripciones.length === 0) {
             mostrarEstadoVacio();
         } else {
@@ -58,24 +67,29 @@ async function cargarPreinscripciones() {
     }
 }
 
-// Filtrar preinscripciones localmente
-function filtrarPreinscripciones(texto) {
-    if (!texto || texto.trim() === '') {
-        mostrarTabla(preinscripcionesData);
-        return;
-    }
+// Buscar preinscripciones
+async function buscarPreinscripciones(query) {
+    mostrarLoading();
     
-    const textoLower = texto.toLowerCase().trim();
-    const preinscripcionesFiltradas = preinscripcionesData.filter(preinscripcion => {
-        const nombreAspirante = preinscripcion.aspirante?.persona ? 
-            `${preinscripcion.aspirante.persona.nombre} ${preinscripcion.aspirante.persona.apellido}`.toLowerCase() : '';
-        const nombreAcudiente = preinscripcion.acudiente?.persona ? 
-            `${preinscripcion.acudiente.persona.nombre} ${preinscripcion.acudiente.persona.apellido}`.toLowerCase() : '';
+    try {
+        const response = await fetch(`${API_URL}/buscar?textoBusqueda=${encodeURIComponent(query)}`);
         
-        return nombreAspirante.includes(textoLower) || nombreAcudiente.includes(textoLower);
-    });
-    
-    mostrarTabla(preinscripcionesFiltradas);
+        if (response.status === 404) {
+            mostrarSinResultados();
+            return;
+        }
+        
+        if (!response.ok) {
+            throw new Error('Error al buscar preinscripciones');
+        }
+        
+        const preinscripciones = await response.json();
+        mostrarTabla(preinscripciones);
+        
+    } catch (error) {
+        console.error('Error al buscar:', error);
+        mostrarError();
+    }
 }
 
 // Mostrar tabla de preinscripciones
@@ -93,18 +107,16 @@ function mostrarTabla(preinscripciones) {
     preinscripciones.forEach(preinscripcion => {
         const tr = document.createElement('tr');
         
-        const nombreAspirante = preinscripcion.aspirante?.persona ? 
-            `${preinscripcion.aspirante.persona.nombre} ${preinscripcion.aspirante.persona.apellido}` : 
-            'Sin nombre';
+        // Obtener datos del aspirante de forma segura
+        const nombreAspirante = obtenerNombreCompleto(preinscripcion.aspirante);
+        const nombreAcudiente = obtenerNombreCompleto(preinscripcion.acudiente);
         
-        const nombreAcudiente = preinscripcion.acudiente?.persona ? 
-            `${preinscripcion.acudiente.persona.nombre} ${preinscripcion.acudiente.persona.apellido}` : 
-            'Sin nombre';
-        
+        // Fecha de preinscripción
         const fechaPreinscripcion = preinscripcion.fechaEntrevista ? 
             new Date(preinscripcion.fechaEntrevista).toLocaleDateString('es-ES') : 
             'Sin fecha';
         
+        // Estado del aspirante
         const estado = preinscripcion.aspirante?.estado || 'Pendiente';
         const estadoClass = getEstadoClass(estado);
         
@@ -118,12 +130,12 @@ function mostrarTabla(preinscripciones) {
                     <button class="btn btn-primary" 
                         onclick="programarEntrevista(${preinscripcion.idPreinscripcion})" 
                         title="Programar Entrevista">
-                        <i class="fas fa-calendar-alt"></i> Programar Entrevista
+                        <i class="fas fa-calendar-alt"></i>
                     </button>
                     <button class="btn btn-success" 
                         onclick="cambiarEstado(${preinscripcion.idPreinscripcion})" 
-                        title="Cambiar Estado">
-                        <i class="fas fa-toggle-on"></i> Cambiar Estado
+                        title="Gestionar Estado">
+                        <i class="fas fa-toggle-on"></i>
                     </button>
                 </div>
             </td>
@@ -135,13 +147,26 @@ function mostrarTabla(preinscripciones) {
     document.getElementById('tabla-container').style.display = 'block';
 }
 
+// Función auxiliar para obtener nombre completo de forma segura
+function obtenerNombreCompleto(entidad) {
+    if (!entidad || !entidad.persona) {
+        return 'Sin nombre';
+    }
+    
+    const nombre = entidad.persona.nombre || '';
+    const apellido = entidad.persona.apellido || '';
+    
+    return `${nombre} ${apellido}`.trim() || 'Sin nombre';
+}
+
 // Obtener clase CSS según el estado
 function getEstadoClass(estado) {
-    const estadoLower = estado.toLowerCase();
+    const estadoLower = (estado || '').toLowerCase();
     if (estadoLower === 'pendiente') return 'estado-pendiente';
     if (estadoLower === 'aprobado') return 'estado-aprobado';
     if (estadoLower === 'rechazado') return 'estado-rechazado';
     if (estadoLower === 'en revisión' || estadoLower === 'en revision') return 'estado-revision';
+    if (estadoLower === 'activo') return 'estado-aprobado';
     return 'estado-pendiente';
 }
 
@@ -191,17 +216,19 @@ async function confirmarProgramarEntrevista() {
             body: JSON.stringify(entrevistaData)
         });
         
+        const data = await response.json();
+        
         if (response.ok) {
             cerrarModal('modal-programar-entrevista');
-            mostrarMensaje('Éxito', 'Entrevista programada exitosamente', 'success');
+            mostrarMensaje('Éxito', data.mensaje || 'Entrevista programada exitosamente', 'success');
             cargarPreinscripciones();
         } else {
-            const data = await response.json();
             mostrarMensaje('Error', data.mensaje || 'Error al programar la entrevista', 'error');
         }
         
     } catch (error) {
         console.error('Error al programar entrevista:', error);
+        cerrarModal('modal-programar-entrevista');
         mostrarMensaje('Error', 'Error en la base de datos', 'error');
     }
 }
@@ -227,14 +254,29 @@ async function cambiarEstado(idPreinscripcion) {
     }
 }
 
+// NUEVA FUNCIÓN: Controlar visibilidad de campos de hoja de vida
+function toggleCamposHojaVida() {
+    const estadoSelect = document.getElementById('nuevo-estado');
+    const contenedorCampos = document.getElementById('campos-hoja-vida');
+    
+    if (estadoSelect.value === 'Aprobado') {
+        contenedorCampos.style.display = 'block';
+    } else {
+        contenedorCampos.style.display = 'none';
+        // Limpiar campos para evitar envío accidental de datos sucios
+        document.getElementById('estudiante-alergias').value = '';
+        document.getElementById('estudiante-enfermedades').value = '';
+        document.getElementById('estudiante-problemas-aprendizaje').value = '';
+    }
+}
+
 // Cargar datos en el formulario de cambio de estado
 function cargarDatosEnFormulario(preinscripcion) {
     // Información del estudiante
-    const nombreAspirante = preinscripcion.aspirante?.persona ? 
-        `${preinscripcion.aspirante.persona.nombre} ${preinscripcion.aspirante.persona.apellido}` : '';
-    
+    const nombreAspirante = obtenerNombreCompleto(preinscripcion.aspirante);
     document.getElementById('estudiante-nombre').value = nombreAspirante;
     
+    // Fecha de nacimiento
     if (preinscripcion.aspirante?.persona?.fechaDeNacimiento) {
         const fecha = new Date(preinscripcion.aspirante.persona.fechaDeNacimiento);
         document.getElementById('estudiante-fecha-nacimiento').value = fecha.toISOString().split('T')[0];
@@ -248,32 +290,59 @@ function cargarDatosEnFormulario(preinscripcion) {
     document.getElementById('estudiante-problemas-aprendizaje').value = '';
     
     // Información del acudiente
-    const nombreAcudiente = preinscripcion.acudiente?.persona ? 
-        `${preinscripcion.acudiente.persona.nombre} ${preinscripcion.acudiente.persona.apellido}` : '';
-    
+    const nombreAcudiente = obtenerNombreCompleto(preinscripcion.acudiente);
     document.getElementById('acudiente-nombre').value = nombreAcudiente;
     document.getElementById('acudiente-telefono').value = preinscripcion.acudiente?.telefono || '';
     
     // Estado
     document.getElementById('nuevo-estado').value = '';
+    
+    // Asegurarse de que los campos arranquen ocultos al abrir el modal
+    document.getElementById('campos-hoja-vida').style.display = 'none';
 }
 
-// Confirmar cambio de estado
+// Confirmar cambio de estado con VALIDACIÓN OBLIGATORIA
 async function confirmarCambiarEstado() {
-    const nuevoEstado = document.getElementById('nuevo-estado').value;
+    let nuevoEstadoSeleccionado = document.getElementById('nuevo-estado').value;
     
-    if (!nuevoEstado) {
+    if (!nuevoEstadoSeleccionado) {
         mostrarMensaje('Advertencia', 'Por favor seleccione un nuevo estado', 'warning');
         return;
     }
-    
-    // Recopilar datos de la hoja de vida
+
+    // LÓGICA DE VALIDACIÓN Y MAPEO
+    let estadoParaEnviar = nuevoEstadoSeleccionado;
+    let alergias = '';
+    let enfermedades = '';
+    let problemas = '';
+
+    if (nuevoEstadoSeleccionado === 'Aprobado') {
+        // 1. Convertimos visual 'Aprobado' a interno 'Activo'
+        estadoParaEnviar = 'Activo';
+        
+        // 2. Capturamos los datos
+        alergias = document.getElementById('estudiante-alergias').value.trim();
+        enfermedades = document.getElementById('estudiante-enfermedades').value.trim();
+        problemas = document.getElementById('estudiante-problemas-aprendizaje').value.trim();
+
+        // 3. VALIDACIÓN ESTRICTA: Si intenta aprobar sin llenar campos, paramos todo.
+        if (alergias === '' || enfermedades === '') {
+            mostrarMensaje(
+                'Faltan Datos', 
+                'Para aprobar al estudiante es OBLIGATORIO llenar la hoja de vida.\n\nSi el estudiante no tiene alergias o enfermedades, por favor escriba "Ninguna".', 
+                'warning'
+            );
+            return; // DETENEMOS LA FUNCIÓN AQUÍ
+        }
+    } 
+    // Si es "Rechazado", se envía "Rechazado" y los campos vacíos
+
     const hojaVidaData = {
-        alergias: document.getElementById('estudiante-alergias').value.trim(),
-        enfermedades: document.getElementById('estudiante-enfermedades').value.trim(),
-        problemasAprendizaje: document.getElementById('estudiante-problemas-aprendizaje').value.trim(),
+        alergias: alergias,
+        enfermedades: enfermedades,
+        problemasAprendizaje: problemas,
         telefonoAcudiente: document.getElementById('acudiente-telefono').value.trim(),
-        nuevoEstado: nuevoEstado
+        nuevoEstado: estadoParaEnviar
     };
     
     try {
@@ -283,19 +352,36 @@ async function confirmarCambiarEstado() {
             body: JSON.stringify(hojaVidaData)
         });
         
+        const data = await response.json();
+        
         if (response.ok) {
             cerrarModal('modal-cambiar-estado');
-            mostrarMensaje('Éxito', 'Estado actualizado exitosamente', 'success');
+            mostrarMensaje('Éxito', data.mensaje || 'Estado actualizado exitosamente', 'success');
             cargarPreinscripciones();
         } else {
-            const data = await response.json();
             mostrarMensaje('Error', data.mensaje || 'Error al cambiar el estado', 'error');
         }
         
     } catch (error) {
         console.error('Error al cambiar estado:', error);
+        cerrarModal('modal-cambiar-estado');
         mostrarMensaje('Error', 'Error en la base de datos', 'error');
     }
+}
+
+// Mostrar sin resultados
+function mostrarSinResultados() {
+    ocultarTodosLosEstados();
+    const tbody = document.getElementById('tbody-preinscripciones');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="5" style="text-align: center; padding: 2rem;">
+                <i class="fas fa-search" style="font-size: 3rem; color: var(--text-secondary); margin-bottom: 1rem;"></i>
+                <p>No se encontraron preinscripciones con ese criterio</p>
+            </td>
+        </tr>
+    `;
+    document.getElementById('tabla-container').style.display = 'block';
 }
 
 // Funciones de UI
