@@ -1,350 +1,346 @@
-// Toggle sidebar
-function toggleSidebar() {
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
-    
-    sidebar.classList.toggle('active');
-    overlay.classList.toggle('active');
-}
+// Variables globales
+let todosLosLogros = [];
+let categoriaSeleccionada = '';
 
-// Configuración de la API
-const API_URL = 'http://localhost:8080/api';
-const API_LOGROS_URL = `${API_URL}/logros`;
+// Elementos del DOM
+const selectCategoria = document.getElementById('select-categoria');
+const tablaLogros = document.getElementById('tabla-logros');
+const tbody = document.getElementById('tbody-logros');
+const modalLogro = document.getElementById('modal-logro');
+const btnCrearLogro = document.getElementById('btn-crear-logro');
+const btnCerrarModal = document.querySelector('#modal-logro .modal-close');
+const btnGuardarLogro = document.getElementById('btn-guardar-logro');
+const inputNombre = document.getElementById('logro-nombre');
+const inputDescripcion = document.getElementById('logro-descripcion');
+const formLogro = document.getElementById('form-logro');
+const resultSection = document.getElementById('results-section');
+const emptyState = document.getElementById('empty-state');
+const loadingState = document.getElementById('loading-state');
+const emptyLogrosState = document.getElementById('empty-logros-state');
 
-// Estado global
-let categoriaActual = '';
-let logroSeleccionado = null;
-let modoEdicion = false;
-
-// Mapeo de nombres de categorías en español
-const CATEGORIAS_NOMBRES = {
-    'psicosociales': 'Psicosociales',
-    'academicos': 'Académicos',
-    'deportivos': 'Deportivos',
-    'artisticos': 'Artísticos',
-    'culturales': 'Culturales'
-};
-
-// Inicialización
-document.addEventListener('DOMContentLoaded', function() {
-    inicializarEventos();
-});
-
-// Inicializar eventos
-function inicializarEventos() {
-    // Selector de categoría
-    document.getElementById('select-categoria').addEventListener('change', function(e) {
-        const categoria = e.target.value;
-        if (categoria) {
-            categoriaActual = categoria;
-            cargarLogrosPorCategoria(categoria);
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    selectCategoria.addEventListener('change', () => {
+        categoriaSeleccionada = selectCategoria.value;
+        if (categoriaSeleccionada === '') {
+            emptyState.style.display = 'block';
+            resultSection.style.display = 'none';
+            loadingState.style.display = 'none';
         } else {
-            mostrarEstadoVacio();
+            cargarLogros();
         }
     });
 
-    // Botones principales
-    document.getElementById('btn-crear-logro').addEventListener('click', abrirModalCrearLogro);
-    document.getElementById('btn-guardar-logro').addEventListener('click', guardarLogro);
-    document.getElementById('btn-confirmar-eliminar-logro').addEventListener('click', eliminarLogro);
-}
-
-// Cargar logros por categoría
-async function cargarLogrosPorCategoria(categoria) {
-    mostrarLoading();
-
-    try {
-        const response = await fetch(`${API_LOGROS_URL}/categoria/${categoria}`);
-        
-        if (!response.ok) {
-            if (response.status === 404) {
-                // No hay logros en esta categoría
-                mostrarResultadosVacios(categoria);
-                return;
-            }
-            throw new Error('Error al cargar logros');
+    btnCrearLogro.addEventListener('click', abrirModalCrearLogro);
+    btnCerrarModal.addEventListener('click', cerrarModal.bind(null, 'modal-logro'));
+    btnGuardarLogro.addEventListener('click', () => {
+        const modo = formLogro.dataset.modo;
+        if (modo === 'crear') {
+            guardarNuevoLogro();
+        } else if (modo === 'editar') {
+            guardarEdicionLogro();
         }
+    });
 
-        const logros = await response.json();
-        mostrarResultados(categoria, logros);
+    // Cerrar modal al hacer clic fuera de él
+    window.addEventListener('click', (event) => {
+        if (event.target === modalLogro) {
+            cerrarModal('modal-logro');
+        }
+    });
+});
 
-    } catch (error) {
-        console.error('Error al cargar logros:', error);
-        mostrarMensaje('Error', 'Error al cargar los logros', 'error');
-        mostrarEstadoVacio();
-    }
-}
-
-// Mostrar resultados con logros
-function mostrarResultados(categoria, logros) {
-    ocultarTodosLosEstados();
-
-    const resultsSection = document.getElementById('results-section');
-    const categoriaNombre = document.getElementById('categoria-nombre');
-    const tbody = document.getElementById('tbody-logros');
-    const emptyLogrosState = document.getElementById('empty-logros-state');
-    const tablaLogros = document.getElementById('tabla-logros');
-
-    // Actualizar título
-    categoriaNombre.textContent = CATEGORIAS_NOMBRES[categoria] || categoria;
-
-    // Limpiar tabla
-    tbody.innerHTML = '';
-
-    if (logros.length === 0) {
-        tablaLogros.style.display = 'none';
-        emptyLogrosState.style.display = 'block';
-    } else {
-        tablaLogros.style.display = 'table';
+// Función para cargar los logros de la categoría seleccionada
+async function cargarLogros() {
+    try {
+        loadingState.style.display = 'block';
+        resultSection.style.display = 'none';
         emptyLogrosState.style.display = 'none';
 
-        logros.forEach(logro => {
-            const tr = document.createElement('tr');
-            
-            tr.innerHTML = `
-                <td>${logro.nombreLogro}</td>
-                <td>${logro.descripcion}</td>
-                <td>
-                    <div class="actions-cell">
-                        <button class="btn btn-secondary btn-icon" 
-                                onclick="editarLogro(${logro.idLogro})" 
-                                title="Editar logro">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-danger btn-icon" 
-                                onclick="confirmarEliminarLogro(${logro.idLogro}, '${logro.nombreLogro.replace(/'/g, "\\'")}')" 
-                                title="Eliminar logro">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            `;
-
-            tbody.appendChild(tr);
-        });
-    }
-
-    resultsSection.style.display = 'block';
-}
-
-// Mostrar resultados vacíos
-function mostrarResultadosVacios(categoria) {
-    ocultarTodosLosEstados();
-
-    const resultsSection = document.getElementById('results-section');
-    const categoriaNombre = document.getElementById('categoria-nombre');
-    const emptyLogrosState = document.getElementById('empty-logros-state');
-    const tablaLogros = document.getElementById('tabla-logros');
-
-    categoriaNombre.textContent = CATEGORIAS_NOMBRES[categoria] || categoria;
-    
-    tablaLogros.style.display = 'none';
-    emptyLogrosState.style.display = 'block';
-    resultsSection.style.display = 'block';
-}
-
-// Abrir modal para crear logro
-function abrirModalCrearLogro() {
-    if (!categoriaActual) {
-        mostrarMensaje('Advertencia', 'Por favor seleccione una categoría primero', 'warning');
-        return;
-    }
-
-    modoEdicion = false;
-    logroSeleccionado = null;
-    
-    document.getElementById('modal-logro-titulo').textContent = 'Crear Nuevo Logro';
-    document.getElementById('form-logro').reset();
-    
-    abrirModal('modal-logro');
-}
-
-// Editar logro existente
-async function editarLogro(idLogro) {
-    try {
-        const response = await fetch(`${API_LOGROS_URL}/${idLogro}`);
+        const response = await fetch(`/api/logro/categoria/${categoriaSeleccionada}`);
         
-        if (!response.ok) {
-            throw new Error('Error al cargar logro');
+        if (response.status === 404 || !response.ok) {
+            // Categoría sin logros
+            todosLosLogros = [];
+            mostrarEstadoVacio();
+            loadingState.style.display = 'none';
+            return;
         }
 
-        const logro = await response.json();
-        logroSeleccionado = logro;
-        modoEdicion = true;
+        const data = await response.json();
+        todosLosLogros = Array.isArray(data) ? data : [];
 
-        document.getElementById('modal-logro-titulo').textContent = 'Editar Logro';
-        document.getElementById('logro-nombre').value = logro.nombreLogro;
-        document.getElementById('logro-descripcion').value = logro.descripcion;
+        loadingState.style.display = 'none';
 
-        abrirModal('modal-logro');
-
+        if (todosLosLogros.length === 0) {
+            resultSection.style.display = 'block';
+            emptyLogrosState.style.display = 'block';
+        } else {
+            resultSection.style.display = 'block';
+            emptyLogrosState.style.display = 'none';
+            renderizarLogros();
+        }
     } catch (error) {
-        console.error('Error al cargar logro:', error);
-        mostrarMensaje('Error', 'Error al cargar los datos del logro', 'error');
+        console.error('Error al cargar logros:', error);
+        todosLosLogros = [];
+        mostrarEstadoVacio();
+        loadingState.style.display = 'none';
     }
 }
 
-// Guardar logro (crear o editar)
-async function guardarLogro() {
-    const nombreLogro = document.getElementById('logro-nombre').value.trim();
-    const descripcion = document.getElementById('logro-descripcion').value.trim();
+// Función para mostrar estado vacío con mensaje amigable
+function mostrarEstadoVacio() {
+    emptyState.style.display = 'block';
+    resultSection.style.display = 'none';
+    loadingState.style.display = 'none';
+}
 
-    // Validaciones
-    if (!nombreLogro) {
-        mostrarMensaje('Advertencia', 'El nombre del logro es obligatorio', 'warning');
+// Función para mostrar la tabla
+function mostrarTabla() {
+    resultSection.style.display = 'block';
+    emptyState.style.display = 'none';
+}
+
+// Función para renderizar los logros en la tabla
+function renderizarLogros() {
+    tbody.innerHTML = '';
+
+    todosLosLogros.forEach(logro => {
+        const fila = document.createElement('tr');
+        fila.innerHTML = `
+            <td>${logro.nombreLogro}</td>
+            <td>${logro.descripcion}</td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="abrirModalEditarLogro(${logro.idLogro})">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="abrirModalEliminarLogro(${logro.idLogro}, '${logro.nombreLogro}')">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </td>
+        `;
+        tbody.appendChild(fila);
+    });
+}
+
+// Función para abrir el modal de creación
+function abrirModalCrearLogro() {
+    formLogro.reset();
+    document.getElementById('modal-logro-titulo').textContent = 'Crear Nuevo Logro';
+    formLogro.dataset.modo = 'crear';
+    delete formLogro.dataset.idLogro;
+    modalLogro.style.display = 'block';
+    inputNombre.focus();
+}
+
+// Función para cerrar el modal de creación
+function cerrarModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+    }
+    if (modalId === 'modal-logro') {
+        formLogro.reset();
+        delete formLogro.dataset.idLogro;
+    }
+}
+
+// Función para guardar un nuevo logro
+async function guardarNuevoLogro() {
+    const nombre = inputNombre.value.trim();
+    const descripcion = inputDescripcion.value.trim();
+
+    if (!nombre) {
+        mostrarMensajeModal('warning', 'Advertencia', 'El nombre del logro es requerido');
         return;
     }
 
     if (!descripcion) {
-        mostrarMensaje('Advertencia', 'La descripción es obligatoria', 'warning');
+        mostrarMensajeModal('warning', 'Advertencia', 'La descripción del logro es requerida');
         return;
     }
 
-    if (nombreLogro.length > 200) {
-        mostrarMensaje('Advertencia', 'El nombre del logro no puede exceder 200 caracteres', 'warning');
-        return;
-    }
-
-    if (descripcion.length > 500) {
-        mostrarMensaje('Advertencia', 'La descripción no puede exceder 500 caracteres', 'warning');
-        return;
-    }
-
-    const logroData = {
-        nombreLogro: nombreLogro,
-        descripcion: descripcion,
-        categoria: categoriaActual
-    };
-
-    try {
-        let response;
-
-        if (modoEdicion && logroSeleccionado) {
-            // Actualizar logro existente
-            response = await fetch(`${API_LOGROS_URL}/${logroSeleccionado.idLogro}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(logroData)
-            });
-        } else {
-            // Crear nuevo logro
-            response = await fetch(API_LOGROS_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(logroData)
-            });
-        }
-
-        if (response.ok) {
-            cerrarModal('modal-logro');
-            mostrarMensaje('Éxito', 
-                modoEdicion ? 'Logro actualizado exitosamente' : 'Logro creado exitosamente', 
-                'success');
-            
-            // Recargar logros de la categoría actual
-            cargarLogrosPorCategoria(categoriaActual);
-        } else {
-            const errorData = await response.json();
-            mostrarMensaje('Error', errorData.mensaje || 'Error al guardar el logro', 'error');
-        }
-
-    } catch (error) {
-        console.error('Error al guardar logro:', error);
-        cerrarModal('modal-logro');
-        mostrarMensaje('Error', 'Error al comunicarse con el servidor', 'error');
-    }
-}
-
-// Confirmar eliminación de logro
-function confirmarEliminarLogro(idLogro, nombreLogro) {
-    logroSeleccionado = { idLogro: idLogro };
-    document.getElementById('nombre-logro-eliminar').textContent = nombreLogro;
-    abrirModal('modal-confirmar-eliminar');
-}
-
-// Eliminar logro
-async function eliminarLogro() {
-    if (!logroSeleccionado) {
+    if (!categoriaSeleccionada) {
+        mostrarMensajeModal('warning', 'Advertencia', 'Debe seleccionar una categoría');
         return;
     }
 
     try {
-        const response = await fetch(`${API_LOGROS_URL}/${logroSeleccionado.idLogro}`, {
-            method: 'DELETE'
+        const nuevoLogro = {
+            nombreLogro: nombre,
+            descripcion: descripcion,
+            categoriaLogro: categoriaSeleccionada,
+            estado: true
+        };
+
+        const response = await fetch('/api/logro/crear', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(nuevoLogro)
         });
 
-        cerrarModal('modal-confirmar-eliminar');
-
-        if (response.ok) {
-            mostrarMensaje('Éxito', 'Logro eliminado exitosamente', 'success');
-            logroSeleccionado = null;
-            
-            // Recargar logros de la categoría actual
-            cargarLogrosPorCategoria(categoriaActual);
-        } else {
+        if (!response.ok) {
             const errorData = await response.json();
-            mostrarMensaje('Error', errorData.mensaje || 'Error al eliminar el logro', 'error');
+            mostrarMensajeModal('error', 'Error', errorData.mensaje || 'Error al crear el logro');
+            return;
         }
 
+        cerrarModal('modal-logro');
+        mostrarMensajeModal('success', 'Éxito', 'Logro creado correctamente');
+        cargarLogros();
     } catch (error) {
-        console.error('Error al eliminar logro:', error);
-        cerrarModal('modal-confirmar-eliminar');
-        mostrarMensaje('Error', 'Error al comunicarse con el servidor', 'error');
+        console.error('Error al guardar logro:', error);
+        mostrarMensajeModal('error', 'Error', 'Error al crear el logro: ' + error.message);
     }
 }
 
-// Funciones de estado de UI
-function mostrarEstadoVacio() {
-    ocultarTodosLosEstados();
-    document.getElementById('empty-state').style.display = 'block';
+// Función para abrir modal de edición de logro
+function abrirModalEditarLogro(idLogro) {
+    const logro = todosLosLogros.find(l => l.idLogro === idLogro);
+    
+    if (logro) {
+        inputNombre.value = logro.nombreLogro;
+        inputDescripcion.value = logro.descripcion;
+        document.getElementById('modal-logro-titulo').textContent = 'Editar Logro';
+        formLogro.dataset.modo = 'editar';
+        formLogro.dataset.idLogro = idLogro;
+        modalLogro.style.display = 'block';
+        inputNombre.focus();
+    }
 }
 
-function mostrarLoading() {
-    ocultarTodosLosEstados();
-    document.getElementById('loading-state').style.display = 'block';
+// Función para abrir modal de confirmación de eliminación
+function abrirModalEliminarLogro(idLogro, nombreLogro) {
+    document.getElementById('nombre-logro-eliminar').textContent = nombreLogro;
+    const btnConfirmarEliminar = document.getElementById('btn-confirmar-eliminar-logro');
+    btnConfirmarEliminar.onclick = () => eliminarLogro(idLogro);
+    document.getElementById('modal-confirmar-eliminar').style.display = 'block';
 }
 
-function ocultarTodosLosEstados() {
-    document.getElementById('empty-state').style.display = 'none';
-    document.getElementById('loading-state').style.display = 'none';
-    document.getElementById('results-section').style.display = 'none';
+// Función para eliminar un logro
+async function eliminarLogro(idLogro) {
+    try {
+        const response = await fetch(`/api/logro/${idLogro}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            mostrarMensajeModal('error', 'Error', errorData.mensaje || 'Error al eliminar el logro');
+            return;
+        }
+
+        cerrarModal('modal-confirmar-eliminar');
+        mostrarMensajeModal('success', 'Éxito', 'Logro eliminado correctamente');
+        cargarLogros();
+    } catch (error) {
+        console.error('Error al eliminar logro:', error);
+        mostrarMensajeModal('error', 'Error', 'Error al eliminar el logro: ' + error.message);
+    }
 }
 
-// Funciones de modal
-function abrirModal(idModal) {
-    document.getElementById(idModal).classList.add('show');
-}
+// Función para guardar la edición de un logro
+async function guardarEdicionLogro() {
+    const idLogro = formLogro.dataset.idLogro;
+    const nombre = inputNombre.value.trim();
+    const descripcion = inputDescripcion.value.trim();
 
-function cerrarModal(idModal) {
-    document.getElementById(idModal).classList.remove('show');
-}
+    if (!nombre) {
+        mostrarMensajeModal('warning', 'Advertencia', 'El nombre del logro es requerido');
+        return;
+    }
 
-function mostrarMensaje(titulo, mensaje, tipo) {
+    if (!descripcion) {
+        mostrarMensajeModal('warning', 'Advertencia', 'La descripción del logro es requerida');
+        return;
+    }
+
+    try {
+        const logroActualizado = {
+            nombreLogro: nombre,
+            descripcion: descripcion,
+            categoriaLogro: categoriaSeleccionada
+        };
+
+        const response = await fetch(`/api/logro/${idLogro}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(logroActualizado)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            mostrarMensajeModal('error', 'Error', errorData.mensaje || 'Error al actualizar el logro');
+            return;
+        }
+
+        cerrarModal('modal-logro');
+        mostrarMensajeModal('success', 'Éxito', 'Logro actualizado correctamente');
+        cargarLogros();
+    } catch (error) {
+        console.error('Error al actualizar logro:', error);
+        mostrarMensajeModal('error', 'Error', 'Error al actualizar el logro: ' + error.message);
+    }
+}
+function mostrarMensajeModal(tipo, titulo, mensaje) {
     const modal = document.getElementById('modal-mensaje');
     const icono = document.getElementById('modal-mensaje-icono');
     const tituloEl = document.getElementById('modal-mensaje-titulo');
     const textoEl = document.getElementById('modal-mensaje-texto');
 
-    tituloEl.textContent = titulo;
-    textoEl.textContent = mensaje;
-
-    icono.className = 'modal-icon';
+    // Configurar icono según tipo
+    icono.className = '';
     if (tipo === 'success') {
-        icono.classList.add('success', 'fas', 'fa-check-circle');
+        icono.className = 'fas fa-check-circle modal-icon modal-icon-success';
     } else if (tipo === 'error') {
-        icono.classList.add('error', 'fas', 'fa-exclamation-circle');
+        icono.className = 'fas fa-exclamation-circle modal-icon modal-icon-error';
     } else if (tipo === 'warning') {
-        icono.classList.add('warning', 'fas', 'fa-exclamation-triangle');
-    } else {
-        icono.classList.add('fas', 'fa-info-circle');
+        icono.className = 'fas fa-exclamation-triangle modal-icon modal-icon-warning';
     }
 
-    abrirModal('modal-mensaje');
+    tituloEl.textContent = titulo;
+    textoEl.textContent = mensaje;
+    modal.style.display = 'block';
 }
 
-// Cerrar modal al hacer clic fuera
-window.onclick = function(event) {
-    if (event.target.classList.contains('modal')) {
-        event.target.classList.remove('show');
+// Función para mostrar mensajes
+function mostrarMensaje(tipo, titulo, mensaje) {
+    // Crear elemento de alerta
+    const alerta = document.createElement('div');
+    alerta.className = `alerta alerta-${tipo}`;
+    alerta.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: ${tipo === 'success' ? '#d4edda' : tipo === 'warning' ? '#fff3cd' : '#f8d7da'};
+        color: ${tipo === 'success' ? '#155724' : tipo === 'warning' ? '#856404' : '#721c24'};
+        border: 1px solid ${tipo === 'success' ? '#c3e6cb' : tipo === 'warning' ? '#ffeaa7' : '#f5c6cb'};
+        border-radius: 4px;
+        padding: 15px 20px;
+        z-index: 10000;
+        font-weight: 500;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    `;
+    alerta.innerHTML = `<strong>${titulo}:</strong> ${mensaje}`;
+    document.body.appendChild(alerta);
+
+    // Remover después de 4 segundos
+    setTimeout(() => {
+        alerta.remove();
+    }, 4000);
+}
+
+// Función para toggle sidebar (si es necesaria)
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('active');
     }
 }

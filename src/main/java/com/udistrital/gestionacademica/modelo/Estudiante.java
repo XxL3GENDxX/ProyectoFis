@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.util.List;
 
 @Entity
 @Table(name = "estudiante")
@@ -31,6 +33,16 @@ public class Estudiante {
 
     @Column(name = "estado", nullable = false, length = 20)
     private String estado = "Pendiente";
+
+    @ManyToMany
+    @JoinTable(
+        name = "estudiante_logro",
+        joinColumns = @JoinColumn(name = "codigoEstudiante"),
+        inverseJoinColumns = @JoinColumn(name = "idLogro")
+    )
+    @JsonIgnore
+    private List<Logro> logros;
+
 
     // Método auxiliar para obtener el nombre del grupo
     public String getNombreGrupo() {
