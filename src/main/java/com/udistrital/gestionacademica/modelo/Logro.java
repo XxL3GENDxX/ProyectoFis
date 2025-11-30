@@ -4,8 +4,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import java.util.List;
 
 @Entity
 @Table(name = "logro")
@@ -16,23 +14,15 @@ public class Logro {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "idLogro")
+    @Column(name = "id_logro")
     private Long idLogro;
 
-    @Column(name = "nombreLogro", nullable = false, length = 150)
+    @Column(name = "nombre_logro", nullable = false, length = 200)
     private String nombreLogro;
 
-    @Column(name = "categoriaLogro", nullable = false, length = 50)
-    private String categoriaLogro;
-
-    @Column(name = "descripcion", columnDefinition = "TEXT")
+    @Column(name = "descripcion", nullable = false, length = 500)
     private String descripcion;
 
-    @Column(name = "estado", nullable = false)
-    private Boolean estado = true;
-
-    @ManyToMany(mappedBy = "logros", cascade = CascadeType.ALL)
-    @JsonIgnore
-    private List<Estudiante> estudiantes;
-
+    @Column(name = "categoria", nullable = false, length = 50)
+    private String categoria;
 }

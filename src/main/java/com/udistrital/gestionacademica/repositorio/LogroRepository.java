@@ -7,6 +7,14 @@ import java.util.List;
 
 @Repository
 public interface LogroRepository extends JpaRepository<Logro, Long> {
-    List<Logro> findByCategoriaLogro(String categoriaLogro);
-    List<Logro> findByEstadoTrue();
+    
+    /**
+     * Buscar logros por categoría
+     */
+    List<Logro> findByCategoria(String categoria);
+    
+    /**
+     * Verificar si existe un logro con el mismo nombre en una categoría
+     */
+    boolean existsByNombreLogroAndCategoria(String nombreLogro, String categoria);
 }

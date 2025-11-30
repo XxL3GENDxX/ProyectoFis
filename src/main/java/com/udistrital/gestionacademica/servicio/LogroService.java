@@ -9,118 +9,121 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 @Slf4j
-@Transactional
 public class LogroService {
 
     private final LogroRepository logroRepository;
 
     /**
-     * Obtiene todas las categorías únicas de logros
+     * Obtener todos los logros de una categoría
      */
-    public List<String> obtenerCategorias() {
-        log.info("Obteniendo categorías de logros");
-        List<Logro> logros = logroRepository.findAll();
-        return logros.stream()
-            .map(Logro::getCategoriaLogro)
-            .distinct()
-            .sorted()
-            .toList();
-    }
-
-    /**
-     * Obtiene los logros por categoría
-     */
+    @Transactional(readOnly = true)
     public List<Logro> obtenerLogrosPorCategoria(String categoria) {
-        log.info("Obteniendo logros para categoría: {}", categoria);
-        return logroRepository.findByCategoriaLogro(categoria);
+        log.info("Obteniendo logros de la categoría: {}", categoria);
+        return logroRepository.findByCategoria(categoria);
     }
 
     /**
-     * Crea un nuevo logro
+     * Obtener un logro por ID
+     */
+    @Transactional(readOnly = true)
+    public Logro obtenerLogroPorId(Long idLogro) {
+        log.info("Obteniendo logro con ID: {}", idLogro);
+        return logroRepository.findById(idLogro)
+                .orElseThrow(() -> new RuntimeException("Logro no encontrado con ID: " + idLogro));
+    }
+
+    /**
+     * Crear un nuevo logro
      */
     public Logro crearLogro(Logro logro) {
-        log.info("Creando logro: {}", logro.getNombreLogro());
+        log.info("Creando logro: {} en categoría: {}", logro.getNombreLogro(), logro.getCategoria());
         
-        if (logro.getNombreLogro() == null || logro.getNombreLogro().isEmpty()) {
-            throw new IllegalArgumentException("El nombre del logro es obligatorio");
+        // Validar datos
+        validarLogro(logro);
+        
+        // Verificar que no exista un logro con el mismo nombre en la misma categoría
+        if (logroRepository.existsByNombreLogroAndCategoria(logro.getNombreLogro(), logro.getCategoria())) {
+            throw new RuntimeException("Ya existe un logro con este nombre en esta categoría");
         }
         
-        if (logro.getCategoriaLogro() == null || logro.getCategoriaLogro().isEmpty()) {
-            throw new IllegalArgumentException("La categoría es obligatoria");
-        }
-        
-        if (logro.getEstado() == null) {
-            logro.setEstado(true);
-        }
-        
-        return logroRepository.save(logro);
+        Logro nuevoLogro = logroRepository.save(logro);
+        log.info("Logro creado exitosamente con ID: {}", nuevoLogro.getIdLogro());
+        return nuevoLogro;
     }
 
     /**
-     * Obtiene un logro por ID
+     * Actualizar un logro existente
      */
-    public Logro obtenerLogro(Long id) {
-        log.info("Obteniendo logro con ID: {}", id);
-        return logroRepository.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Logro no encontrado con ID: " + id));
+    public Logro actualizarLogro(Long idLogro, Logro logroActualizado) {
+        log.info("Actualizando logro con ID: {}", idLogro);
+        
+        Logro logroExistente = obtenerLogroPorId(idLogro);
+        
+        // Validar datos
+        validarLogro(logroActualizado);
+        
+        // Si cambió el nombre, verificar que no exista otro con ese nombre en la misma categoría
+        if (!logroExistente.getNombreLogro().equals(logroActualizado.getNombreLogro())) {
+            if (logroRepository.existsByNombreLogroAndCategoria(
+                    logroActualizado.getNombreLogro(), 
+                    logroActualizado.getCategoria())) {
+                throw new RuntimeException("Ya existe un logro con este nombre en esta categoría");
+            }
+        }
+        
+        // Actualizar campos
+        logroExistente.setNombreLogro(logroActualizado.getNombreLogro());
+        logroExistente.setDescripcion(logroActualizado.getDescripcion());
+        logroExistente.setCategoria(logroActualizado.getCategoria());
+        
+        Logro logroGuardado = logroRepository.save(logroExistente);
+        log.info("Logro actualizado exitosamente");
+        return logroGuardado;
     }
 
     /**
-     * Edita un logro existente
+     * Eliminar un logro
      */
-    public Logro editarLogro(Long id, Logro logroActualizado) {
-        log.info("Editando logro con ID: {}", id);
+    public void eliminarLogro(Long idLogro) {
+        log.info("Eliminando logro con ID: {}", idLogro);
         
-        Logro logro = obtenerLogro(id);
+        Logro logro = obtenerLogroPorId(idLogro);
+        logroRepository.delete(logro);
         
-        if (logroActualizado.getNombreLogro() != null && !logroActualizado.getNombreLogro().isEmpty()) {
-            logro.setNombreLogro(logroActualizado.getNombreLogro());
-        }
-        
-        if (logroActualizado.getCategoriaLogro() != null && !logroActualizado.getCategoriaLogro().isEmpty()) {
-            logro.setCategoriaLogro(logroActualizado.getCategoriaLogro());
-        }
-        
-        if (logroActualizado.getDescripcion() != null) {
-            logro.setDescripcion(logroActualizado.getDescripcion());
-        }
-        
-        return logroRepository.save(logro);
+        log.info("Logro eliminado exitosamente");
     }
 
     /**
-     * Cambia el estado (inhabilita) un logro
+     * Validar datos del logro
      */
-    public Logro cambiarEstado(Long id) {
-        log.info("Cambiando estado del logro con ID: {}", id);
-        
-        Logro logro = obtenerLogro(id);
-        logro.setEstado(!logro.getEstado());
-        
-        return logroRepository.save(logro);
-    }
-
-    /**
-     * Elimina un logro (opcional, ya que podemos usar cambiarEstado)
-     */
-    public void eliminarLogro(Long id) {
-        log.info("Eliminando logro con ID: {}", id);
-        
-        if (!logroRepository.existsById(id)) {
-            throw new IllegalArgumentException("Logro no encontrado con ID: " + id);
+    private void validarLogro(Logro logro) {
+        if (logro.getNombreLogro() == null || logro.getNombreLogro().trim().isEmpty()) {
+            throw new RuntimeException("El nombre del logro es obligatorio");
         }
         
-        logroRepository.deleteById(id);
+        if (logro.getNombreLogro().length() > 200) {
+            throw new RuntimeException("El nombre del logro no puede exceder 200 caracteres");
+        }
+        
+        if (logro.getDescripcion() == null || logro.getDescripcion().trim().isEmpty()) {
+            throw new RuntimeException("La descripción es obligatoria");
+        }
+        
+        if (logro.getDescripcion().length() > 500) {
+            throw new RuntimeException("La descripción no puede exceder 500 caracteres");
+        }
+        
+        if (logro.getCategoria() == null || logro.getCategoria().trim().isEmpty()) {
+            throw new RuntimeException("La categoría es obligatoria");
+        }
+        
+        // Validar que la categoría sea una de las permitidas
+        List<String> categoriasValidas = List.of("psicosociales", "academicos", "deportivos", "artisticos", "culturales");
+        if (!categoriasValidas.contains(logro.getCategoria().toLowerCase())) {
+            throw new RuntimeException("Categoría no válida");
+        }
     }
-
-    /**
-     * Obtiene todos los logros habilitados
-     */
-    public List<Logro> obtenerLogrosHabilitados() {
-        log.info("Obteniendo logros habilitados");
-        return logroRepository.findByEstadoTrue();
-    }
-
 }
