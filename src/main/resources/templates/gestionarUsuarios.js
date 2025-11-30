@@ -18,6 +18,12 @@ let usuarioSeleccionado = null;
 document.addEventListener('DOMContentLoaded', function() {
     inicializarEventos();
     cargarUsuarios();
+    // Cargar datos del usuario después de inicializar los eventos
+    setTimeout(() => {
+        if (typeof cargarDatosUsuario === 'function') {
+            cargarDatosUsuario();
+        }
+    }, 100);
 });
 
 // Inicializar eventos
@@ -32,7 +38,6 @@ function inicializarEventos() {
     document.getElementById('btn-crear-usuario').addEventListener('click', abrirModalCrear);
     document.getElementById('btn-confirmar-crear').addEventListener('click', confirmarCrearUsuario);
     document.getElementById('btn-confirmar-editar').addEventListener('click', confirmarEditarUsuario);
-    document.getElementById('btn-confirmar-password').addEventListener('click', confirmarCambiarPassword);
 }
 
 // Cargar todos los usuarios
@@ -117,9 +122,6 @@ function mostrarTabla(usuarios) {
                             onchange="cambiarEstadoUsuario(${usuario.idTokenUsuario})">
                         <span class="slider"></span>
                     </label>
-                    <button class="btn btn-warning btn-icon" onclick="cambiarPassword(${usuario.idTokenUsuario}, '${usuario.nombreUsuario}')" title="Cambiar contraseña">
-                        <i class="fas fa-key"></i>
-                    </button>
                 </div>
             </td>
         `;
@@ -314,49 +316,6 @@ async function cambiarEstadoUsuario(idUsuario) {
         console.error('Error al cambiar estado:', error);
         mostrarMensaje('Error', 'Error en la base de datos', 'error');
         cargarUsuarios(); // Recargar para revertir el switch
-    }
-}
-
-// Cambiar contraseña
-function cambiarPassword(idUsuario, nombreUsuario) {
-    usuarioSeleccionado = idUsuario;
-    document.getElementById('usuario-cambiar-password').textContent = nombreUsuario;
-    document.getElementById('nueva-contrasena').value = '';
-    abrirModal('modal-cambiar-password');
-}
-
-// Confirmar cambio de contraseña
-async function confirmarCambiarPassword() {
-    const nuevaContrasena = document.getElementById('nueva-contrasena').value;
-    
-    if (!nuevaContrasena) {
-        mostrarMensaje('Advertencia', 'Por favor ingrese una contraseña', 'warning');
-        return;
-    }
-    
-    if (nuevaContrasena.length < 6) {
-        mostrarMensaje('Advertencia', 'La contraseña debe tener al menos 6 caracteres', 'warning');
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_URL}/${usuarioSeleccionado}/cambiar-password`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contrasena: nuevaContrasena })
-        });
-        
-        if (response.ok) {
-            cerrarModal('modal-cambiar-password');
-            mostrarMensaje('Éxito', 'Contraseña cambiada exitosamente', 'success');
-        } else {
-            const data = await response.json();
-            mostrarMensaje('Error', data.mensaje || 'Error al cambiar la contraseña', 'error');
-        }
-        
-    } catch (error) {
-        console.error('Error al cambiar contraseña:', error);
-        mostrarMensaje('Error', 'Error en la base de datos', 'error');
     }
 }
 

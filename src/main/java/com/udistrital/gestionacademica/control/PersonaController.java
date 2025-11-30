@@ -32,11 +32,9 @@ public class PersonaController {
                 );
             }
             
+            // El apellido es opcional
             if (persona.getApellido() == null || persona.getApellido().isEmpty()) {
-                return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "El apellido es obligatorio"),
-                    HttpStatus.BAD_REQUEST
-                );
+                persona.setApellido("");
             }
             
             Persona nuevaPersona = personaService.crearPersona(persona);

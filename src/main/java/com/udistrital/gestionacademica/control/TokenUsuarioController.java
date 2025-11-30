@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import java.util.Map;
 
 
@@ -19,6 +20,7 @@ public class TokenUsuarioController {
     
     private final TokenUsuarioService tokenUsuarioService;
 
+    // Login
     @PostMapping("/validarLogin")    
     public ResponseEntity<?> validarTokenUsuario(@RequestBody TokenUsuario tokenUsuario) {
         try {
@@ -47,13 +49,162 @@ public class TokenUsuarioController {
             return new ResponseEntity<>(nuevoTokenUsuario, HttpStatus.OK);
             
         } catch (IllegalArgumentException e) {
-            return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Usuario o contraseña inválidos"),
-                HttpStatus.UNAUTHORIZED
-            );
+            // Distinguir entre usuario inhabilitado y credenciales inválidas
+            String mensaje = e.getMessage();
+            if (mensaje != null && mensaje.contains("inhabilitado")) {
+                return new ResponseEntity<>(
+                    Map.of("error", true, "mensaje", "Tu usuario está inhabilitado. Contacta con el administrador."),
+                    HttpStatus.UNAUTHORIZED
+                );
+            } else {
+                return new ResponseEntity<>(
+                    Map.of("error", true, "mensaje", "Usuario o contraseña inválidos"),
+                    HttpStatus.UNAUTHORIZED
+                );
+            }
         } catch (Exception e) {
             return new ResponseEntity<>(
                 Map.of("error", true, "mensaje", "Error al validar login: " + e.getMessage()),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    // Obtener todos los usuarios
+    @GetMapping
+    public ResponseEntity<?> obtenerTodos() {
+        try {
+            List<TokenUsuario> usuarios = tokenUsuarioService.obtenerTodos();
+            return new ResponseEntity<>(usuarios, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Error al obtener usuarios: {}", e.getMessage());
+            return new ResponseEntity<>(
+                Map.of("error", true, "mensaje", "Error al cargar usuarios"),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    // Obtener usuario por ID
+    @GetMapping("/{id}")
+    public ResponseEntity<?> obtenerPorId(@PathVariable Long id) {
+        try {
+            TokenUsuario usuario = tokenUsuarioService.obtenerPorId(id);
+            return new ResponseEntity<>(usuario, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(
+                Map.of("error", true, "mensaje", "Usuario no encontrado"),
+                HttpStatus.NOT_FOUND
+            );
+        } catch (Exception e) {
+            log.error("Error al obtener usuario: {}", e.getMessage());
+            return new ResponseEntity<>(
+                Map.of("error", true, "mensaje", "Error al cargar el usuario"),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    // Crear usuario
+    @PostMapping("/crear")
+    public ResponseEntity<?> crear(@RequestBody TokenUsuario tokenUsuario) {
+        try {
+            if (tokenUsuario.getNombreUsuario() == null || tokenUsuario.getNombreUsuario().isEmpty()) {
+                return new ResponseEntity<>(
+                    Map.of("error", true, "mensaje", "El nombre de usuario es obligatorio"),
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+            
+            if (tokenUsuario.getContrasena() == null || tokenUsuario.getContrasena().isEmpty()) {
+                return new ResponseEntity<>(
+                    Map.of("error", true, "mensaje", "La contraseña es obligatoria"),
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            if (tokenUsuario.getPersona() == null || tokenUsuario.getPersona().getIdPersona() == null) {
+                return new ResponseEntity<>(
+                    Map.of("error", true, "mensaje", "Debe proporcionar una persona válida"),
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            TokenUsuario usuarioCreado = tokenUsuarioService.crear(tokenUsuario);
+            return new ResponseEntity<>(usuarioCreado, HttpStatus.CREATED);
+            
+        } catch (Exception e) {
+            log.error("Error al crear usuario: {}", e.getMessage());
+            return new ResponseEntity<>(
+                Map.of("error", true, "mensaje", "Error al crear el usuario: " + e.getMessage()),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    // Editar usuario
+    @PutMapping("/{id}")
+    public ResponseEntity<?> editar(@PathVariable Long id, @RequestBody TokenUsuario tokenUsuario) {
+        try {
+            TokenUsuario usuarioEditado = tokenUsuarioService.editar(id, tokenUsuario);
+            return new ResponseEntity<>(usuarioEditado, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(
+                Map.of("error", true, "mensaje", "Usuario no encontrado"),
+                HttpStatus.NOT_FOUND
+            );
+        } catch (Exception e) {
+            log.error("Error al editar usuario: {}", e.getMessage());
+            return new ResponseEntity<>(
+                Map.of("error", true, "mensaje", "Error al editar el usuario: " + e.getMessage()),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    // Cambiar estado
+    @PatchMapping("/{id}/cambiar-estado")
+    public ResponseEntity<?> cambiarEstado(@PathVariable Long id) {
+        try {
+            TokenUsuario usuarioActualizado = tokenUsuarioService.cambiarEstado(id);
+            return new ResponseEntity<>(usuarioActualizado, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(
+                Map.of("error", true, "mensaje", "Usuario no encontrado"),
+                HttpStatus.NOT_FOUND
+            );
+        } catch (Exception e) {
+            log.error("Error al cambiar estado: {}", e.getMessage());
+            return new ResponseEntity<>(
+                Map.of("error", true, "mensaje", "Error al cambiar el estado"),
+                HttpStatus.INTERNAL_SERVER_ERROR
+            );
+        }
+    }
+
+    // Cambiar contraseña
+    @PatchMapping("/{id}/cambiar-password")
+    public ResponseEntity<?> cambiarPassword(@PathVariable Long id, @RequestBody Map<String, String> request) {
+        try {
+            String nuevaContrasena = request.get("contrasena");
+            if (nuevaContrasena == null || nuevaContrasena.isEmpty()) {
+                return new ResponseEntity<>(
+                    Map.of("error", true, "mensaje", "La contraseña es obligatoria"),
+                    HttpStatus.BAD_REQUEST
+                );
+            }
+
+            TokenUsuario usuarioActualizado = tokenUsuarioService.cambiarPassword(id, nuevaContrasena);
+            return new ResponseEntity<>(usuarioActualizado, HttpStatus.OK);
+        } catch (IllegalArgumentException e) {
+            return new ResponseEntity<>(
+                Map.of("error", true, "mensaje", "Usuario no encontrado"),
+                HttpStatus.NOT_FOUND
+            );
+        } catch (Exception e) {
+            log.error("Error al cambiar contraseña: {}", e.getMessage());
+            return new ResponseEntity<>(
+                Map.of("error", true, "mensaje", "Error al cambiar la contraseña"),
                 HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
