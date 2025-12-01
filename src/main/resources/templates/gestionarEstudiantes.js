@@ -8,8 +8,8 @@ function toggleSidebar() {
 
 // Configuración de la API
 const API_URL = 'http://localhost:8080/api/estudiante';
-const API_GRADOS_URL = 'http://localhost:8080/api/grado';
-const API_GRUPOS_URL = 'http://localhost:8080/api/grupo';
+const API_GRADOS_URL = 'http://localhost:8080/api/grados';
+const API_GRUPOS_URL = 'http://localhost:8080/api/grupos';
 
 // Estado global
 let modoGestionGrupo = false;

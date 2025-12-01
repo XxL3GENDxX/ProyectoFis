@@ -11,6 +11,7 @@ function toggleSidebar() {
 const API_URL = 'http://localhost:8080/api';
 const API_GRUPOS_URL = `${API_URL}/grupos`;
 const API_GRADOS_URL = `${API_URL}/grados`;
+const API_ESTUDIANTE_URL = `${API_URL}/estudiante`;
 
 // Estado global
 let grupoSeleccionado = null;
@@ -264,10 +265,17 @@ async function mostrarDetalleGrupo(grupo, query) {
 
     // Cargar estudiantes del grupo
     try {
-        // Aquí deberías hacer una petición al backend para obtener los estudiantes del grupo
-        // Por ahora simularemos con los datos del grupo
+        // --- CAMBIO IMPORTANTE AQUÍ ---
+        // Hacemos fetch al endpoint que busca estudiantes por ID de grupo
+        const response = await fetch(`${API_ESTUDIANTE_URL}/grupo/${grupo.idGrupo}`);
         
-        const estudiantes = grupo.estudiantes ? Object.values(grupo.estudiantes) : [];
+        let estudiantes = [];
+        
+        if (response.ok) {
+            estudiantes = await response.json();
+        } else {
+            console.warn('No se pudieron cargar estudiantes o el grupo está vacío');
+        }
 
         tbody.innerHTML = '';
 
@@ -280,14 +288,21 @@ async function mostrarDetalleGrupo(grupo, query) {
 
             estudiantes.forEach(estudiante => {
                 const tr = document.createElement('tr');
-                const estadoClass = estudiante.estado === 'Activo' ? 'estado-activo' : 
-                                  estudiante.estado === 'Inactivo' ? 'estado-inactivo' : 
+                // Validamos que exista el estado
+                const estado = estudiante.estado || 'Pendiente';
+                
+                const estadoClass = estado === 'Activo' ? 'estado-activo' : 
+                                  estado === 'Inactivo' ? 'estado-inactivo' : 
                                   'estado-pendiente';
+                
+                // Validamos que exista la persona
+                const nombre = estudiante.persona ? estudiante.persona.nombre : 'Sin Nombre';
+                const apellido = estudiante.persona ? estudiante.persona.apellido : 'Sin Apellido';
 
                 tr.innerHTML = `
-                    <td>${estudiante.persona.nombre}</td>
-                    <td>${estudiante.persona.apellido}</td>
-                    <td><span class="estado-badge ${estadoClass}">${estudiante.estado}</span></td>
+                    <td>${nombre}</td>
+                    <td>${apellido}</td>
+                    <td><span class="estado-badge ${estadoClass}">${estado}</span></td>
                 `;
 
                 tbody.appendChild(tr);

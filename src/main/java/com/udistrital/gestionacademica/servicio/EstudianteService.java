@@ -437,4 +437,21 @@ public class EstudianteService {
             throw new RuntimeException("Error en la base de datos", e);
         }
     }
+
+    /**
+     * Obtener lista de estudiantes asignados a un grupo específico
+     */
+    @Transactional(readOnly = true)
+    public List<Estudiante> obtenerEstudiantesPorGrupo(Long idGrupo) {
+        log.info("Buscando estudiantes del grupo ID: {}", idGrupo);
+
+        // Llamamos al método que acabamos de crear en el repositorio
+        List<Estudiante> estudiantes = estudianteRepository.buscarPorIdGrupo(idGrupo);
+
+        if (estudiantes.isEmpty()) {
+            log.warn("No se encontraron estudiantes para el grupo {}", idGrupo);
+        }
+
+        return estudiantes;
+    }
 }

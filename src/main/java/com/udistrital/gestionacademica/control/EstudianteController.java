@@ -256,4 +256,11 @@ public class EstudianteController {
         response.put("data", data);
         return response;
     }
+
+    @GetMapping("/grupo/{idGrupo}")
+    public ResponseEntity<List<Estudiante>> obtenerEstudiantesPorGrupo(@PathVariable Long idGrupo) {
+        // Asumiendo que tienes un método en tu servicio:
+        List<Estudiante> estudiantes = estudianteService.obtenerEstudiantesPorGrupo(idGrupo);
+        return ResponseEntity.ok(estudiantes);
+    }
 }

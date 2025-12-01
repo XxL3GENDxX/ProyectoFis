@@ -18,4 +18,6 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
     @Query("SELECT e FROM Estudiante e WHERE e.persona.documento = :documento")
     Optional<Estudiante> findByDocumentoEstudiante(@Param("documento") String documento);
 
+    @Query("SELECT e FROM Estudiante e WHERE e.grupo.idGrupo = :idGrupo")
+    List<Estudiante> buscarPorIdGrupo(@Param("idGrupo") Long idGrupo);
 }
