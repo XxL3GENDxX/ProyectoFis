@@ -23,14 +23,17 @@ public class Preinscripcion {
     @JoinColumn(name = "idEstudiante", nullable = false)
     private Estudiante aspirante;
 
-    @Column(name = "fechaPreinscripcion", nullable = false)
+    @Column(name = "fechaEntrevista")
     private LocalDateTime fechaEntrevista;
-    //creo que sobra la hora
-    @Column(name = "horaEntrevista", length = 20)
-    private LocalTime horaEntrevista;
+
+    @Column(name = "lugarEntrevista", length = 100)
+    private String lugarEntrevista;
+
+    @Column(name = "fechaPreinscripcion", nullable = false)
+    private LocalDateTime fechaPreinscripcion;
 
     @ManyToOne
     @JoinColumn(name = "idAcudiente", nullable = false)
     private Acudiente acudiente;
-    
+
 }

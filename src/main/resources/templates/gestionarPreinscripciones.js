@@ -204,10 +204,12 @@ async function confirmarProgramarEntrevista() {
         return;
     }
     
-    const entrevistaData = {
-        fechaEntrevista: new Date(fechaEntrevista).toISOString(),
-        lugarEntrevista: lugarEntrevista
-    };
+            // CÓDIGO CORRECTO
+        const entrevistaData = {
+            // Enviamos el string directo y le agregamos segundos
+            fechaEntrevista: fechaEntrevista + ":00", 
+            lugarEntrevista: lugarEntrevista
+        };
     
     try {
         const response = await fetch(`${API_URL}/${preinscripcionSeleccionada}/programar-entrevista`, {

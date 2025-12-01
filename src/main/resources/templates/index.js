@@ -35,12 +35,22 @@ async function enviarSolicitud(event) {
     event.preventDefault();
 
     try {
+        // --- VALIDACIÓN DE FECHAS ---
+        const fechaNacAcudiente = document.getElementById('fechaNacimientoAcudiente').value;
+        const fechaNacEstudiante = document.getElementById('fechaNacimiento').value;
+
+        if (!fechaNacAcudiente || !fechaNacEstudiante) {
+            alert("Por favor seleccione las fechas de nacimiento.");
+            return;
+        }
+
         // 1. CREAR PERSONA DEL ACUDIENTE
         const personaAcudienteData = {
             documento: document.getElementById('numIdentificacionAcudiente').value,
             nombre: document.getElementById('nombreAcudiente').value,
             apellido: document.getElementById('apellidoAcudiente').value,
-            fechaDeNacimiento: document.getElementById('fechaNacimientoAcudiente').value + 'T00:00:00',
+            // CORRECCIÓN: Agregamos la hora para que Java LocalDateTime lo acepte
+            fechaDeNacimiento: fechaNacAcudiente + 'T00:00:00', 
             genero: document.getElementById('generoAcudiente').value
         };
 
@@ -52,10 +62,12 @@ async function enviarSolicitud(event) {
             body: JSON.stringify(personaAcudienteData)
         });
 
-        console.log('Respuesta de la API de persona acudiente:', personaAcudienteResponse);
-
         if (!personaAcudienteResponse.ok) {
-            throw new Error('Error al crear persona del acudiente');
+            // Intentamos leer el mensaje JSON del servidor
+            const errorData = await personaAcudienteResponse.json().catch(() => ({}));
+            console.error('Error detalles:', errorData);
+            // Mostramos el mensaje específico si existe (ej: documento repetido)
+            throw new Error('Error en Persona Acudiente: ' + (errorData.mensaje || JSON.stringify(errorData)));
         }
 
         const personaAcudienteCreada = await personaAcudienteResponse.json();
@@ -66,7 +78,8 @@ async function enviarSolicitud(event) {
             documento: document.getElementById('numIdentificacion').value,
             nombre: document.getElementById('nombre').value,
             apellido: document.getElementById('apellido').value,
-            fechaDeNacimiento: document.getElementById('fechaNacimiento').value + 'T00:00:00',
+            // CORRECCIÓN: Agregamos la hora aquí también
+            fechaDeNacimiento: fechaNacEstudiante + 'T00:00:00',
             genero: document.getElementById('generoEstudiante').value
         };
 
@@ -79,7 +92,9 @@ async function enviarSolicitud(event) {
         });
 
         if (!personaEstudianteResponse.ok) {
-            throw new Error('Error al crear persona del estudiante');
+            const errorData = await personaEstudianteResponse.json().catch(() => ({}));
+            console.error('Error detalles:', errorData);
+            throw new Error('Error en Persona Estudiante: ' + (errorData.mensaje || JSON.stringify(errorData)));
         }
 
         const personaEstudianteCreada = await personaEstudianteResponse.json();
@@ -95,8 +110,6 @@ async function enviarSolicitud(event) {
             estado: 'Pendiente'
         };
 
-        console.log('Creando acudiente:', acudienteData);
-
         const acudienteResponse = await fetch("http://localhost:8080/api/acudiente/crear", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -104,7 +117,8 @@ async function enviarSolicitud(event) {
         });
 
         if (!acudienteResponse.ok) {
-            throw new Error('Error al crear acudiente');
+            const errorData = await acudienteResponse.json().catch(() => ({}));
+            throw new Error('Error al crear acudiente: ' + (errorData.mensaje || JSON.stringify(errorData)));
         }
 
         const acudienteCreado = await acudienteResponse.json();
@@ -121,8 +135,6 @@ async function enviarSolicitud(event) {
             estado: 'Pendiente'
         };
 
-        console.log('Creando estudiante:', estudianteData);
-
         const estudianteResponse = await fetch("http://localhost:8080/api/estudiante/crear", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -130,13 +142,20 @@ async function enviarSolicitud(event) {
         });
 
         if (!estudianteResponse.ok) {
-            throw new Error('Error al crear estudiante');
+            const errorData = await estudianteResponse.json().catch(() => ({}));
+            throw new Error('Error al crear estudiante: ' + (errorData.mensaje || JSON.stringify(errorData)));
         }
 
         const estudianteCreado = await estudianteResponse.json();
         console.log('Estudiante creado:', estudianteCreado);
 
         // 5. CREAR PREINSCRIPCIÓN
+        const obtenerFechaLocal = () => {
+            const ahora = new Date();
+            const fechaLocal = new Date(ahora.getTime() - (ahora.getTimezoneOffset() * 60000));
+            return fechaLocal.toISOString().slice(0, 19);
+        };
+
         const preinscripcionData = {
             aspirante: {
                 codigoEstudiante: estudianteCreado.codigoEstudiante
@@ -144,10 +163,10 @@ async function enviarSolicitud(event) {
             acudiente: {
                 idAcudiente: acudienteCreado.idAcudiente
             },
-            fechaEntrevista: new Date().toISOString()
+            fechaEntrevista: null,
+            lugarEntrevista: null,
+            fechaPreinscripcion: obtenerFechaLocal()
         };
-
-        console.log('Creando preinscripción:', preinscripcionData);
 
         const preinscripcionResponse = await fetch("http://localhost:8080/api/preinscripcion/crear", {
             method: "POST",
@@ -156,7 +175,8 @@ async function enviarSolicitud(event) {
         });
 
         if (!preinscripcionResponse.ok) {
-            throw new Error('Error al crear preinscripción');
+            const errorData = await preinscripcionResponse.json().catch(() => ({}));
+            throw new Error('Error al crear preinscripción: ' + (errorData.mensaje || JSON.stringify(errorData)));
         }
 
         alert("¡Solicitud registrada con éxito!");
