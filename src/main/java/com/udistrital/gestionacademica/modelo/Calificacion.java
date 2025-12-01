@@ -27,6 +27,10 @@ public class Calificacion {
     @JoinColumn(name = "id_logro", nullable = false)
     private Logro logro;
 
+    @ManyToOne
+    @JoinColumn(name = "id_periodo", nullable = false)
+    private Periodo periodo;
+
     @Column(name = "fecha_asignacion", nullable = false)
     private LocalDateTime fechaAsignacion;
 

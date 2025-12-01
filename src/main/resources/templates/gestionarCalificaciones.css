@@ -179,12 +179,31 @@ body {
 /* ========== BÚSQUEDA ========== */
 .search-section {
     margin-bottom: 2rem;
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
 }
 
 .search-bar {
     display: flex;
     gap: 0.5rem;
     max-width: 600px;
+    flex: 1;
+    min-width: 250px;
+}
+
+.filter-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 200px;
+}
+
+.filter-section label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
 }
 
 .search-input {
@@ -429,6 +448,19 @@ body {
     text-transform: capitalize;
 }
 
+.periodo-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    background-color: #e0e7ff;
+    color: #3730a3;
+    text-transform: uppercase;
+    display: inline-block;
+    min-width: 80px;
+    text-align: center;
+}
+
 .categoria-psicosociales {
     background-color: #ddd6fe;
     color: #5b21b6;
@@ -550,6 +582,12 @@ body {
 
 .modal-body.text-center {
     text-align: center;
+}
+
+.modal-body hr {
+    border: none;
+    border-top: 2px solid var(--border-color);
+    margin: 1.5rem 0;
 }
 
 .modal-icon {

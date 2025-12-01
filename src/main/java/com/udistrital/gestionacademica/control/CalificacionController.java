@@ -47,15 +47,97 @@ public class CalificacionController {
     }
 
     /**
-     * Asignar logro a estudiante
+     * Obtener calificaciones de un estudiante por período
+     */
+    @GetMapping("/estudiante/{codigoEstudiante}/periodo/{idPeriodo}")
+    public ResponseEntity<?> obtenerCalificacionesPorEstudiantePeriodo(
+            @PathVariable Long codigoEstudiante,
+            @PathVariable Long idPeriodo) {
+        try {
+            log.info("Obteniendo calificaciones del estudiante {} en periodo {}", codigoEstudiante, idPeriodo);
+            
+            List<Calificacion> calificaciones = 
+                calificacionService.obtenerCalificacionesPorEstudianteYPeriodo(codigoEstudiante, idPeriodo);
+            
+            return ResponseEntity.ok(calificaciones);
+            
+        } catch (RuntimeException e) {
+            log.error("Error al obtener calificaciones: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(crearRespuestaError(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error al obtener calificaciones", e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
+
+    /**
+     * Obtener calificaciones por nombre de período
+     */
+    @GetMapping("/periodo/{nombrePeriodo}")
+    public ResponseEntity<?> obtenerCalificacionesPorPeriodo(@PathVariable String nombrePeriodo) {
+        try {
+            log.info("Obteniendo calificaciones del periodo: {}", nombrePeriodo);
+            
+            List<Calificacion> calificaciones = 
+                calificacionService.obtenerCalificacionesPorPeriodo(nombrePeriodo);
+            
+            return ResponseEntity.ok(calificaciones);
+            
+        } catch (Exception e) {
+            log.error("Error al obtener calificaciones: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
+
+    /**
+     * Asignar logro a estudiante en un período específico
      */
     @PostMapping("/asignar")
     public ResponseEntity<?> asignarLogro(@RequestBody AsignarLogroRequest request) {
         try {
-            log.info("Asignando logro {} al estudiante {}", 
-                request.getIdLogro(), request.getCodigoEstudiante());
+            log.info("Asignando logro {} al estudiante {} en periodo {}", 
+                request.getIdLogro(), request.getCodigoEstudiante(), request.getIdPeriodo());
             
             Calificacion calificacion = calificacionService.asignarLogro(
+                request.getCodigoEstudiante(),
+                request.getIdLogro(),
+                request.getIdPeriodo(),
+                request.getObservaciones()
+            );
+            
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(calificacion);
+                    
+        } catch (RuntimeException e) {
+            log.error("Error al asignar logro: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(crearRespuestaError(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error al asignar logro", e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
+
+    /**
+     * Asignar logro a estudiante usando el período actual
+     */
+    @PostMapping("/asignar/actual")
+    public ResponseEntity<?> asignarLogroConPeriodoActual(@RequestBody AsignarLogroActualRequest request) {
+        try {
+            log.info("Asignando logro {} al estudiante {} (periodo actual)", 
+                request.getIdLogro(), request.getCodigoEstudiante());
+            
+            Calificacion calificacion = calificacionService.asignarLogroConPeriodoActual(
                 request.getCodigoEstudiante(),
                 request.getIdLogro(),
                 request.getObservaciones()
@@ -160,6 +242,34 @@ public class CalificacionController {
     }
 
     /**
+     * Obtener historial del estudiante filtrado por período
+     */
+    @GetMapping("/historial/{codigoEstudiante}/periodo/{idPeriodo}")
+    public ResponseEntity<?> obtenerHistorialPorPeriodo(
+            @PathVariable Long codigoEstudiante,
+            @PathVariable Long idPeriodo) {
+        try {
+            log.info("Obteniendo historial del estudiante {} en periodo {}", codigoEstudiante, idPeriodo);
+            
+            CalificacionService.HistorialEstudiante historial = 
+                calificacionService.obtenerHistorialPorPeriodo(codigoEstudiante, idPeriodo);
+            
+            return ResponseEntity.ok(historial);
+                    
+        } catch (RuntimeException e) {
+            log.error("Error al obtener historial: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(crearRespuestaError(e.getMessage()));
+        } catch (Exception e) {
+            log.error("Error al obtener historial", e);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(crearRespuestaError("Error en la base de datos"));
+        }
+    }
+
+    /**
      * Crear respuesta de error
      */
     private Map<String, Object> crearRespuestaError(String mensaje) {
@@ -173,6 +283,14 @@ public class CalificacionController {
     
     @lombok.Data
     public static class AsignarLogroRequest {
+        private Long codigoEstudiante;
+        private Long idLogro;
+        private Long idPeriodo;
+        private String observaciones;
+    }
+
+    @lombok.Data
+    public static class AsignarLogroActualRequest {
         private Long codigoEstudiante;
         private Long idLogro;
         private String observaciones;
