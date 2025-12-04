@@ -10,62 +10,59 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
-
 @RestController
 @RequestMapping("/api/token_usuario")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = {"http://127.0.0.1:5500", "http://localhost:5500", "http://127.0.0.1:8080","http://localhost:8080"}) 
+@CrossOrigin(origins = {"http://127.0.0.1:5500", "http://localhost:5500", "http://127.0.0.1:8080", "http://localhost:8080"})
 public class TokenUsuarioController {
-    
+
     private final TokenUsuarioService tokenUsuarioService;
 
     // Login
-    @PostMapping("/validarLogin")    
+    @PostMapping("/validarLogin")
     public ResponseEntity<?> validarTokenUsuario(@RequestBody TokenUsuario tokenUsuario) {
         try {
-            
+
             if (tokenUsuario.getNombreUsuario() == null || tokenUsuario.getNombreUsuario().isEmpty()) {
                 return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "El nombre de usuario es obligatorio"),
-                    HttpStatus.BAD_REQUEST
+                        Map.of("error", true, "mensaje", "El nombre de usuario es obligatorio"),
+                        HttpStatus.BAD_REQUEST
                 );
             }
-            
+
             if (tokenUsuario.getContrasena() == null || tokenUsuario.getContrasena().isEmpty()) {
                 return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "La contraseña es obligatoria"),
-                    HttpStatus.BAD_REQUEST
+                        Map.of("error", true, "mensaje", "La contraseña es obligatoria"),
+                        HttpStatus.BAD_REQUEST
                 );
             }
-            
+
             TokenUsuario nuevoTokenUsuario = tokenUsuarioService.validarTokenUsuario(
-                tokenUsuario.getNombreUsuario(), 
-                tokenUsuario.getContrasena()
+                    tokenUsuario.getNombreUsuario(),
+                    tokenUsuario.getContrasena()
             );
 
-        
-            
             return new ResponseEntity<>(nuevoTokenUsuario, HttpStatus.OK);
-            
+
         } catch (IllegalArgumentException e) {
             // Distinguir entre usuario inhabilitado y credenciales inválidas
             String mensaje = e.getMessage();
             if (mensaje != null && mensaje.contains("inhabilitado")) {
                 return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "Tu usuario está inhabilitado. Contacta con el administrador."),
-                    HttpStatus.UNAUTHORIZED
+                        Map.of("error", true, "mensaje", "Tu usuario está inhabilitado. Contacta con el administrador."),
+                        HttpStatus.UNAUTHORIZED
                 );
             } else {
                 return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "Usuario o contraseña inválidos"),
-                    HttpStatus.UNAUTHORIZED
+                        Map.of("error", true, "mensaje", "Usuario o contraseña inválidos"),
+                        HttpStatus.UNAUTHORIZED
                 );
             }
         } catch (Exception e) {
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Error al validar login: " + e.getMessage()),
-                HttpStatus.INTERNAL_SERVER_ERROR
+                    Map.of("error", true, "mensaje", "Error al validar login: " + e.getMessage()),
+                    HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
     }
@@ -79,8 +76,8 @@ public class TokenUsuarioController {
         } catch (Exception e) {
             log.error("Error al obtener usuarios: {}", e.getMessage());
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Error al cargar usuarios"),
-                HttpStatus.INTERNAL_SERVER_ERROR
+                    Map.of("error", true, "mensaje", "Error al cargar usuarios"),
+                    HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
     }
@@ -93,63 +90,42 @@ public class TokenUsuarioController {
             return new ResponseEntity<>(usuario, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Usuario no encontrado"),
-                HttpStatus.NOT_FOUND
+                    Map.of("error", true, "mensaje", "Usuario no encontrado"),
+                    HttpStatus.NOT_FOUND
             );
         } catch (Exception e) {
             log.error("Error al obtener usuario: {}", e.getMessage());
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Error al cargar el usuario"),
-                HttpStatus.INTERNAL_SERVER_ERROR
+                    Map.of("error", true, "mensaje", "Error al cargar el usuario"),
+                    HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
     }
 
-    // Crear usuario
     @PostMapping("/crear")
-    public ResponseEntity<?> crear(@RequestBody TokenUsuario tokenUsuario) {
+    public ResponseEntity<?> crearUsuario(@RequestBody TokenUsuario usuario) {
         try {
-            if (tokenUsuario.getNombreUsuario() == null || tokenUsuario.getNombreUsuario().isEmpty()) {
+            // Validaciones básicas de usuario y contraseña
+            if (usuario.getNombreUsuario() == null || usuario.getContrasena() == null) {
                 return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "El nombre de usuario es obligatorio"),
-                    HttpStatus.BAD_REQUEST
-                );
-            }
-            
-            if (tokenUsuario.getContrasena() == null || tokenUsuario.getContrasena().isEmpty()) {
-                return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "La contraseña es obligatoria"),
-                    HttpStatus.BAD_REQUEST
+                        Map.of("error", true, "mensaje", "Usuario y contraseña son obligatorios"),
+                        HttpStatus.BAD_REQUEST
                 );
             }
 
-            if (tokenUsuario.getPersona() == null || tokenUsuario.getPersona().getIdPersona() == null) {
-                return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "Debe proporcionar una persona válida"),
-                    HttpStatus.BAD_REQUEST
-                );
-            }
+            TokenUsuario nuevoUsuario = tokenUsuarioService.crearUsuario(usuario);
+            return new ResponseEntity<>(nuevoUsuario, HttpStatus.CREATED);
 
-            TokenUsuario usuarioCreado = tokenUsuarioService.crear(tokenUsuario);
-            return new ResponseEntity<>(usuarioCreado, HttpStatus.CREATED);
-            
         } catch (IllegalArgumentException e) {
-            String mensaje = e.getMessage();
-            if (mensaje != null && mensaje.contains("ya existe")) {
-                return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "El nombre de usuario ya existe"),
-                    HttpStatus.BAD_REQUEST
-                );
-            }
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", mensaje),
-                HttpStatus.BAD_REQUEST
+                    Map.of("error", true, "mensaje", e.getMessage()),
+                    HttpStatus.BAD_REQUEST
             );
         } catch (Exception e) {
-            log.error("Error al crear usuario: {}", e.getMessage());
+            log.error("Error creando usuario: ", e);
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Error al crear el usuario: " + e.getMessage()),
-                HttpStatus.INTERNAL_SERVER_ERROR
+                    Map.of("error", true, "mensaje", "Error interno al crear usuario"),
+                    HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
     }
@@ -164,24 +140,24 @@ public class TokenUsuarioController {
             String mensaje = e.getMessage();
             if (mensaje != null && mensaje.contains("ya existe")) {
                 return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "El nombre de usuario ya existe"),
-                    HttpStatus.BAD_REQUEST
+                        Map.of("error", true, "mensaje", "El nombre de usuario ya existe"),
+                        HttpStatus.BAD_REQUEST
                 );
             } else if (mensaje != null && mensaje.contains("no encontrado")) {
                 return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "Usuario no encontrado"),
-                    HttpStatus.NOT_FOUND
+                        Map.of("error", true, "mensaje", "Usuario no encontrado"),
+                        HttpStatus.NOT_FOUND
                 );
             }
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", mensaje),
-                HttpStatus.BAD_REQUEST
+                    Map.of("error", true, "mensaje", mensaje),
+                    HttpStatus.BAD_REQUEST
             );
         } catch (Exception e) {
             log.error("Error al editar usuario: {}", e.getMessage());
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Error al editar el usuario: " + e.getMessage()),
-                HttpStatus.INTERNAL_SERVER_ERROR
+                    Map.of("error", true, "mensaje", "Error al editar el usuario: " + e.getMessage()),
+                    HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
     }
@@ -194,14 +170,14 @@ public class TokenUsuarioController {
             return new ResponseEntity<>(usuarioActualizado, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Usuario no encontrado"),
-                HttpStatus.NOT_FOUND
+                    Map.of("error", true, "mensaje", "Usuario no encontrado"),
+                    HttpStatus.NOT_FOUND
             );
         } catch (Exception e) {
             log.error("Error al cambiar estado: {}", e.getMessage());
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Error al cambiar el estado"),
-                HttpStatus.INTERNAL_SERVER_ERROR
+                    Map.of("error", true, "mensaje", "Error al cambiar el estado"),
+                    HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
     }
@@ -213,8 +189,8 @@ public class TokenUsuarioController {
             String nuevaContrasena = request.get("contrasena");
             if (nuevaContrasena == null || nuevaContrasena.isEmpty()) {
                 return new ResponseEntity<>(
-                    Map.of("error", true, "mensaje", "La contraseña es obligatoria"),
-                    HttpStatus.BAD_REQUEST
+                        Map.of("error", true, "mensaje", "La contraseña es obligatoria"),
+                        HttpStatus.BAD_REQUEST
                 );
             }
 
@@ -222,14 +198,14 @@ public class TokenUsuarioController {
             return new ResponseEntity<>(usuarioActualizado, HttpStatus.OK);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Usuario no encontrado"),
-                HttpStatus.NOT_FOUND
+                    Map.of("error", true, "mensaje", "Usuario no encontrado"),
+                    HttpStatus.NOT_FOUND
             );
         } catch (Exception e) {
             log.error("Error al cambiar contraseña: {}", e.getMessage());
             return new ResponseEntity<>(
-                Map.of("error", true, "mensaje", "Error al cambiar la contraseña"),
-                HttpStatus.INTERNAL_SERVER_ERROR
+                    Map.of("error", true, "mensaje", "Error al cambiar la contraseña"),
+                    HttpStatus.INTERNAL_SERVER_ERROR
             );
         }
     }

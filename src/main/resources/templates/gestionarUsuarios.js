@@ -138,73 +138,88 @@ function abrirModalCrear() {
     abrirModal('modal-crear-usuario');
 }
 
-// Confirmar creación de usuario
 async function confirmarCrearUsuario() {
-    const nombreUsuario = document.getElementById('crear-nombre-usuario').value.trim();
-    const contrasena = document.getElementById('crear-contrasena').value;
-    const rol = document.getElementById('crear-rol').value;
-    const estado = document.getElementById('crear-estado').value === 'Activo';
-    
-    if (!nombreUsuario || !contrasena || !rol) {
-        mostrarMensaje('Advertencia', 'Por favor complete todos los campos obligatorios', 'warning');
+    // 1. Obtener referencias a los elementos del DOM
+    const inputDocumento = document.getElementById('txt-documento-crear');
+    const inputUsuario = document.getElementById('txt-usuario-crear');
+    const inputPassword = document.getElementById('txt-password-crear');
+    const selectRol = document.getElementById('sel-rol-crear');
+
+    // 2. Extraer valores
+    const documento = inputDocumento.value.trim();
+    const nombreUsuario = inputUsuario.value.trim();
+    const contrasena = inputPassword.value.trim();
+    const rol = selectRol.value;
+
+    // 3. Validar que no estén vacíos
+    if (!documento) {
+        mostrarMensaje('Advertencia', 'Por favor ingrese el documento de la persona', 'warning');
         return;
     }
-    
-    if (contrasena.length < 6) {
-        mostrarMensaje('Advertencia', 'La contraseña debe tener al menos 6 caracteres', 'warning');
+    if (!nombreUsuario) {
+        mostrarMensaje('Advertencia', 'Por favor ingrese un nombre de usuario', 'warning');
         return;
     }
-    
+    if (!contrasena) {
+        mostrarMensaje('Advertencia', 'Por favor ingrese una contraseña', 'warning');
+        return;
+    }
+
+    // 4. Construir el objeto JSON (Estructura anidada para evitar DTOs en Java)
+    // Java recibirá un TokenUsuario que dentro tiene una Persona que tiene un Documento
+    const datos = {
+        nombreUsuario: nombreUsuario,
+        contrasena: contrasena,
+        rol: rol,
+        estado: true,
+        persona: {
+            documento: documento // <--- AQUÍ ESTÁ EL TRUCO
+        }
+    };
+
     try {
-        // Crear usuario directamente
-        // Se usará el nombreUsuario como nombre de la persona
-        const personaData = {
-            nombre: nombreUsuario,
-            apellido: ""
-        };
-        
-        const personaResponse = await fetch('http://localhost:8080/api/persona/crear', {
+        // Mostrar estado de carga si tienes un spinner, si no, opcional
+        const btnConfirmar = document.getElementById('btn-confirmar-crear');
+        const textoOriginal = btnConfirmar.innerHTML;
+        btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
+        btnConfirmar.disabled = true;
+
+        // 5. Enviar petición al Backend
+        const respuesta = await fetch(API_URL + '/crear', { // Asegúrate que la ruta sea /crear o la que definiste
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(personaData)
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(datos)
         });
-        
-        if (!personaResponse.ok) {
-            const errorData = await personaResponse.json();
-            throw new Error(errorData.mensaje || 'Error al crear la persona');
-        }
-        
-        const personaCreada = await personaResponse.json();
-        
-        // Crear usuario con el idPersona
-        const usuarioData = {
-            nombreUsuario: nombreUsuario,
-            contrasena: contrasena,
-            estado: estado,
-            rol: rol,
-            persona: {
-                idPersona: personaCreada.idPersona
-            }
-        };
-        
-        const response = await fetch(`${API_URL}/crear`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(usuarioData)
-        });
-        
-        if (response.ok) {
+
+        const resultado = await respuesta.json();
+
+        // 6. Procesar respuesta
+        if (respuesta.ok) {
+            mostrarMensaje('Éxito', 'Usuario creado y asociado correctamente', 'success');
             cerrarModal('modal-crear-usuario');
-            mostrarMensaje('Éxito', 'Usuario creado exitosamente', 'success');
-            cargarUsuarios();
+            
+            // Limpiar formulario
+            inputDocumento.value = '';
+            inputUsuario.value = '';
+            inputPassword.value = '';
+            selectRol.value = 'Estudiante'; // O el valor por defecto que prefieras
+
+            cargarUsuarios(); // Recargar la tabla
         } else {
-            const data = await response.json();
-            mostrarMensaje('Error', data.mensaje || 'Error al crear el usuario', 'error');
+            // Manejar errores que vienen del backend (ej: documento no existe)
+            mostrarMensaje('Error', resultado.mensaje || 'No se pudo crear el usuario', 'error');
         }
-        
+
     } catch (error) {
-        console.error('Error al crear usuario:', error);
-        mostrarMensaje('Error', error.message || 'Error en la base de datos', 'error');
+        console.error('Error:', error);
+        mostrarMensaje('Error', 'Error de conexión con el servidor', 'error');
+    } finally {
+        // Restaurar botón
+        const btnConfirmar = document.getElementById('btn-confirmar-crear');
+        btnConfirmar.innerHTML = '<i class="fas fa-save"></i> Guardar';
+        btnConfirmar.disabled = false;
     }
 }
 

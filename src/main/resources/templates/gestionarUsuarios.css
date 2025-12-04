@@ -707,4 +707,51 @@ body {
         width: 95%;
         max-width: none;
     }
+
+        /* ========== MEJORA DE TABLA ========== */
+    
+        /* 1. Ajuste general de celdas para alineación vertical */
+        .data-table td {
+            padding: 15px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+            /* Centra el contenido verticalmente */
+        }
+    
+        /* 2. Forzar que la columna de acciones no se rompa ni se encoja */
+        .data-table th:last-child,
+        .data-table td:last-child {
+            width: 150px;
+            /* Ancho mínimo fijo para los botones */
+            white-space: nowrap;
+            /* Evita que los botones bajen de línea */
+            text-align: center;
+            /* Centra los botones en su celda */
+        }
+    
+        /* 3. Contenedor de los botones (REEMPLAZAR LA CLASE .options-cell ACTUAL) */
+        .options-cell {
+            display: flex;
+            align-items: center;
+            /* Centrado vertical perfecto */
+            justify-content: center;
+            /* Centrado horizontal */
+            gap: 10px;
+            /* Espacio entre el botón azul y el switch */
+            flex-wrap: nowrap;
+            /* IMPORTANTE: Prohíbe que se bajen a otra línea */
+        }
+    
+        /* 4. Ajuste fino para el Switch para que quede alineado con el botón */
+        .switch-estado {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+            cursor: pointer;
+            margin-bottom: 0;
+            /* Asegura que no tenga margen extra abajo */
+            flex-shrink: 0;
+            /* Evita que el switch se aplaste */
+        }
 }
