@@ -105,7 +105,7 @@ public class emailService {
         String fechaFormateada = fechaCitacion.format(formatter);
         String horaFormateada = fechaCitacion.format(horaFormatter);
 
-        return """
+        return String.format("""
             <!DOCTYPE html>
             <html lang="es">
             <head>
@@ -129,7 +129,7 @@ public class emailService {
                         box-shadow: 0 0 20px rgba(0,0,0,0.1);
                     }
                     .header {
-                        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+                        background: linear-gradient(135deg, #2563eb 0%%, #1d4ed8 100%%);
                         color: white;
                         padding: 30px;
                         text-align: center;
@@ -236,7 +236,7 @@ public class emailService {
                             flex-direction: column;
                         }
                         .info-label {
-                            width: 100%;
+                            width: 100%%;
                             margin-bottom: 5px;
                         }
                     }
@@ -300,13 +300,13 @@ public class emailService {
                 </div>
             </body>
             </html>
-            """.formatted(
+            """,
                 nombreInstitucion,
                 nombreAcudiente,
                 nombreEstudiante,
                 nombreGrupo,
-                String.valueOf(fechaFormateada),
-                String.valueOf(horaFormateada),
+                fechaFormateada,
+                horaFormateada,
                 nombreInstitucion,
                 direccionInstitucion,
                 telefonoInstitucion,
