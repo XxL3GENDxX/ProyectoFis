@@ -24,9 +24,10 @@ public class CitacionService {
     private final CitacionRepository citacionRepository;
     private final EstudianteRepository estudianteRepository;
     private final AcudienteRepository acudienteRepository;
+    private final emailService emailService;
 
     /**
-     * Crear una citación individual
+     * Crear una citación individual y enviar correo
      */
     public Citacion crearCitacion(Long codigoEstudiante, LocalDateTime fechaCitacion) {
         log.info("Creando citación para estudiante: {}", codigoEstudiante);
@@ -46,27 +47,44 @@ public class CitacionService {
         Citacion citacionGuardada = citacionRepository.save(citacion);
         log.info("Citación creada exitosamente con ID: {}", citacionGuardada.getIdCitacion());
 
+        // Enviar correo electrónico de forma asíncrona
+        try {
+            emailService.enviarCorreoCitacion(citacionGuardada);
+            log.info("Correo de citación programado para envío al acudiente: {}",
+                    estudiante.getAcudiente().getCorreoElectronico());
+        } catch (Exception e) {
+            log.error("Error al programar envío de correo para citación {}: {}",
+                    citacionGuardada.getIdCitacion(), e.getMessage());
+            // No lanzamos excepción para no interrumpir el proceso de creación
+        }
+
         return citacionGuardada;
     }
 
     /**
-     * Crear múltiples citaciones para varios estudiantes
+     * Crear múltiples citaciones para varios estudiantes y enviar correos
      */
     public List<Citacion> crearCitacionesMultiples(List<Long> codigosEstudiantes, LocalDateTime fechaCitacion) {
         log.info("Creando {} citaciones masivas", codigosEstudiantes.size());
 
         List<Citacion> citacionesCreadas = new ArrayList<>();
+        int correosEnviados = 0;
+        int correosFallidos = 0;
 
         for (Long codigoEstudiante : codigosEstudiantes) {
             try {
                 Citacion citacion = crearCitacion(codigoEstudiante, fechaCitacion);
                 citacionesCreadas.add(citacion);
+                correosEnviados++;
             } catch (RuntimeException e) {
                 log.warn("Error al crear citación para estudiante {}: {}", codigoEstudiante, e.getMessage());
+                correosFallidos++;
             }
         }
 
-        log.info("Se crearon {} citaciones exitosamente", citacionesCreadas.size());
+        log.info("Proceso completado: {} citaciones creadas, {} correos programados, {} fallos",
+                citacionesCreadas.size(), correosEnviados, correosFallidos);
+
         return citacionesCreadas;
     }
 
@@ -117,5 +135,23 @@ public class CitacionService {
 
         citacionRepository.delete(citacion);
         log.info("Citación eliminada exitosamente");
+    }
+
+    /**
+     * Reenviar correo de citación
+     */
+    public void reenviarCorreoCitacion(Long idCitacion) {
+        log.info("Reenviando correo de citación: {}", idCitacion);
+
+        Citacion citacion = citacionRepository.findById(idCitacion)
+                .orElseThrow(() -> new RuntimeException("Citación no encontrada"));
+
+        try {
+            emailService.enviarCorreoCitacion(citacion);
+            log.info("Correo de citación reenviado exitosamente");
+        } catch (Exception e) {
+            log.error("Error al reenviar correo de citación: {}", e.getMessage());
+            throw new RuntimeException("Error al enviar el correo: " + e.getMessage());
+        }
     }
 }

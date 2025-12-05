@@ -12,16 +12,19 @@ const API_URL = 'http://localhost:8080/api';
 const API_GRUPOS_URL = `${API_URL}/grupos`;
 const API_GRADOS_URL = `${API_URL}/grados`;
 const API_ESTUDIANTE_URL = `${API_URL}/estudiante`;
+const API_CITACIONES_URL = `${API_URL}/citaciones`;
 
 // Estado global
 let grupoSeleccionado = null;
 let modoEdicion = false;
 let timeoutBusqueda = null;
+let estudiantesDelGrupo = []; // Para almacenar estudiantes del grupo actual
 
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     inicializarEventos();
     cargarGradosEnModal();
+    crearModalCitaciones();
 });
 
 // Inicializar eventos
@@ -41,7 +44,7 @@ function inicializarEventos() {
     
     // Botones de la tabla
     document.getElementById('btn-generar-listado').addEventListener('click', generarListado);
-    document.getElementById('btn-generar-citaciones').addEventListener('click', generarCitaciones);
+    document.getElementById('btn-generar-citaciones').addEventListener('click', abrirModalCitaciones);
     
     // Botones del modal
     document.getElementById('btn-guardar-grupo').addEventListener('click', guardarGrupo);
@@ -58,10 +61,8 @@ async function buscarGrupos(query) {
     mostrarLoading();
 
     try {
-        // Buscar por grado o número de grupo
         const queryLower = query.toLowerCase().trim();
         
-        // Primero intentar buscar todos los grados
         const gradosResponse = await fetch(API_GRADOS_URL);
         if (!gradosResponse.ok) {
             throw new Error('Error al buscar grados');
@@ -69,22 +70,17 @@ async function buscarGrupos(query) {
         
         const grados = await gradosResponse.json();
         
-        // Filtrar grados que coincidan con la búsqueda
         const gradosFiltrados = grados.filter(grado => 
             grado.nombreGrado.toLowerCase().includes(queryLower)
         );
 
         if (gradosFiltrados.length > 0) {
-            // Si encontramos grados, mostrar todos sus grupos
             if (gradosFiltrados.length === 1) {
-                // Si es solo un grado, mostrar sus grupos
                 await mostrarGruposPorGrado(gradosFiltrados[0].idGrado, query);
             } else {
-                // Si son múltiples grados, mostrar tarjetas de todos los grupos
                 await mostrarMultiplesGrados(gradosFiltrados, query);
             }
         } else {
-            // Intentar buscar por número de grupo en todos los grados
             const numeroGrupo = parseInt(queryLower);
             if (!isNaN(numeroGrupo)) {
                 await buscarPorNumeroGrupo(numeroGrupo, query);
@@ -117,10 +113,8 @@ async function mostrarGruposPorGrado(idGrado, query) {
         }
 
         if (grupos.length === 1) {
-            // Si solo hay un grupo, mostrar directamente sus estudiantes
             await mostrarDetalleGrupo(grupos[0], query);
         } else {
-            // Si hay múltiples grupos, mostrar tarjetas
             mostrarListaGrupos(grupos, query);
         }
 
@@ -130,7 +124,6 @@ async function mostrarGruposPorGrado(idGrado, query) {
     }
 }
 
-// Mostrar múltiples grados
 // Cargar grados en el modal
 async function cargarGradosEnModal() {
     try {
@@ -147,8 +140,8 @@ async function cargarGradosEnModal() {
 
         grados.forEach(grado => {
             const option = document.createElement('option');
-            option.value = grado.idGrado; // ← IMPORTANTE: Guardar el ID como value
-            option.textContent = grado.nombreGrado; // ← Mostrar el nombre
+            option.value = grado.idGrado;
+            option.textContent = grado.nombreGrado;
             select.appendChild(option);
         });
 
@@ -201,7 +194,6 @@ function mostrarListaGrupos(grupos, query) {
     searchQuery.textContent = query;
     groupsGrid.innerHTML = '';
 
-    // Ocultar botones de edición y tabla
     document.getElementById('btn-editar-grupo').style.display = 'none';
     document.getElementById('btn-eliminar-grupo').style.display = 'none';
     document.getElementById('students-table-container').style.display = 'none';
@@ -256,26 +248,21 @@ async function mostrarDetalleGrupo(grupo, query) {
 
     searchQuery.textContent = `${grupo.grado.nombreGrado} - Grupo ${grupo.numeroGrupo}`;
 
-    // Mostrar botones de edición
     document.getElementById('btn-editar-grupo').style.display = 'inline-flex';
     document.getElementById('btn-eliminar-grupo').style.display = 'inline-flex';
-
-    // Ocultar lista de grupos
     document.getElementById('groups-list-container').style.display = 'none';
 
-    // Cargar estudiantes del grupo
     try {
-        // --- CAMBIO IMPORTANTE AQUÍ ---
-        // Hacemos fetch al endpoint que busca estudiantes por ID de grupo
         const response = await fetch(`${API_ESTUDIANTE_URL}/grupo/${grupo.idGrupo}`);
         
         let estudiantes = [];
         
         if (response.ok) {
             estudiantes = await response.json();
-        } else {
-            console.warn('No se pudieron cargar estudiantes o el grupo está vacío');
         }
+
+        // Guardar estudiantes para usar en citaciones
+        estudiantesDelGrupo = estudiantes;
 
         tbody.innerHTML = '';
 
@@ -288,14 +275,12 @@ async function mostrarDetalleGrupo(grupo, query) {
 
             estudiantes.forEach(estudiante => {
                 const tr = document.createElement('tr');
-                // Validamos que exista el estado
                 const estado = estudiante.estado || 'Pendiente';
                 
                 const estadoClass = estado === 'Activo' ? 'estado-activo' : 
                                   estado === 'Inactivo' ? 'estado-inactivo' : 
                                   'estado-pendiente';
                 
-                // Validamos que exista la persona
                 const nombre = estudiante.persona ? estudiante.persona.nombre : 'Sin Nombre';
                 const apellido = estudiante.persona ? estudiante.persona.apellido : 'Sin Apellido';
 
@@ -353,9 +338,8 @@ function editarGrupo() {
 }
 
 // Guardar grupo (crear o editar)
-// Guardar grupo (crear o editar)
 async function guardarGrupo() {
-    const idGrado = document.getElementById('grupo-grado').value; // Ya viene como ID
+    const idGrado = document.getElementById('grupo-grado').value;
     const numeroGrupo = document.getElementById('grupo-numero').value;
     const directorGrupo = document.getElementById('grupo-director').value.trim();
     const limiteEstudiantes = document.getElementById('grupo-limite').value;
@@ -367,7 +351,7 @@ async function guardarGrupo() {
 
     const grupoData = {
         grado: { 
-            idGrado: parseInt(idGrado) // Convertir a número entero
+            idGrado: parseInt(idGrado)
         },
         idGrupo: (modoEdicion && grupoSeleccionado) ? grupoSeleccionado.idGrupo : null,
         numeroGrupo: parseInt(numeroGrupo),
@@ -379,14 +363,12 @@ async function guardarGrupo() {
         let response;
         
         if (modoEdicion && grupoSeleccionado) {
-            // Actualizar grupo existente
             response = await fetch(`${API_GRUPOS_URL}/actualizar/${grupoSeleccionado.idGrupo}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(grupoData)
             });
         } else {
-            // Crear nuevo grupo
             response = await fetch(`${API_GRUPOS_URL}/crear`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -400,7 +382,6 @@ async function guardarGrupo() {
                 modoEdicion ? 'Grupo actualizado exitosamente' : 'Grupo creado exitosamente', 
                 'success');
             
-            // Recargar búsqueda si había una activa
             const queryActual = document.getElementById('txt-buscar-grupo').value;
             if (queryActual) {
                 buscarGrupos(queryActual);
@@ -462,54 +443,7 @@ async function eliminarGrupo() {
     }
 }
 
-// Generar listado (exportar a Excel)
-function generarListado() {
-    if (!grupoSeleccionado) {
-        mostrarMensaje('Advertencia', 'No hay ningún grupo seleccionado', 'warning');
-        return;
-    }
-
-    mostrarMensaje('Información', 'Funcionalidad de exportación en desarrollo', 'info');
-}
-
-// Generar citaciones
-function generarCitaciones() {
-    if (!grupoSeleccionado) {
-        mostrarMensaje('Advertencia', 'No hay ningún grupo seleccionado', 'warning');
-        return;
-    }
-
-    mostrarMensaje('Información', 'Funcionalidad de citaciones en desarrollo', 'info');
-}
-
-// Cargar grados en el modal
-async function cargarGradosEnModal() {
-    try {
-        const response = await fetch(API_GRADOS_URL);
-        
-        if (!response.ok) {
-            throw new Error('Error al cargar grados');
-        }
-
-        const grados = await response.json();
-        const select = document.getElementById('grupo-grado');
-
-        select.innerHTML = '<option value="">Seleccione un grado</option>';
-
-        grados.forEach(grado => {
-            const option = document.createElement('option');
-            option.value = grado.idGrado;
-            option.textContent = grado.nombreGrado;
-            select.appendChild(option);
-        });
-
-    } catch (error) {
-        console.error('Error al cargar grados:', error);
-        mostrarMensaje('Error', 'Error al cargar los grados disponibles', 'error');
-    }
-}
-
-// Agregar esta función para generar el listado PDF
+// Generar listado (exportar a PDF)
 async function generarListado() {
     if (!grupoSeleccionado) {
         mostrarMensaje('Advertencia', 'No hay ningún grupo seleccionado', 'warning');
@@ -519,20 +453,15 @@ async function generarListado() {
     try {
         mostrarMensaje('Información', 'Generando PDF...', 'info');
         
-        // Hacer la petición al backend para generar el PDF
         const response = await fetch(`${API_GRUPOS_URL}/${grupoSeleccionado.idGrupo}/generar-listado-pdf`);
         
         if (!response.ok) {
             throw new Error('Error al generar el PDF');
         }
         
-        // Obtener el blob del PDF
         const pdfBlob = await response.blob();
-        
-        // Crear una URL temporal para el blob
         const pdfUrl = URL.createObjectURL(pdfBlob);
         
-        // Abrir modal de previsualización
         abrirModalPrevisualizacionPDF(pdfUrl, pdfBlob);
         
     } catch (error) {
@@ -541,17 +470,244 @@ async function generarListado() {
     }
 }
 
+// ==================== FUNCIONES DE CITACIONES ====================
+
+/**
+ * Crear el modal de citaciones dinámicamente
+ */
+function crearModalCitaciones() {
+    const modalHTML = `
+        <div class="modal" id="modal-citaciones">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-envelope"></i> Generar Citaciones</h2>
+                </div>
+                <div class="modal-body">
+                    <div class="citacion-info">
+                        <p><strong>Grupo:</strong> <span id="citacion-grupo-nombre"></span></p>
+                        <p><strong>Total estudiantes:</strong> <span id="citacion-total-estudiantes"></span></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="citacion-fecha">
+                            Fecha y hora de la citación <span class="campo-obligatorio">*</span>
+                        </label>
+                        <input type="datetime-local" id="citacion-fecha" class="form-input" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="citacion-seleccionar-todos" onchange="toggleSeleccionarTodos()">
+                            Seleccionar todos los estudiantes
+                        </label>
+                    </div>
+
+                    <div class="estudiantes-lista" id="estudiantes-citacion-lista">
+                        <!-- Los estudiantes se cargarán dinámicamente -->
+                    </div>
+
+                    <div class="form-note">
+                        <i class="fas fa-info-circle"></i>
+                        Seleccione los estudiantes para los cuales desea generar citaciones.
+                        Se enviará una citación al acudiente de cada estudiante seleccionado.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="cerrarModal('modal-citaciones')">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button class="btn btn-primary" id="btn-confirmar-citaciones">
+                        <i class="fas fa-paper-plane"></i> Generar Citaciones
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Agregar evento al botón de confirmar
+    document.getElementById('btn-confirmar-citaciones').addEventListener('click', generarCitaciones);
+}
+
+/**
+ * Abrir modal de citaciones y cargar estudiantes
+ */
+function abrirModalCitaciones() {
+    if (!grupoSeleccionado) {
+        mostrarMensaje('Advertencia', 'No hay ningún grupo seleccionado', 'warning');
+        return;
+    }
+
+    if (estudiantesDelGrupo.length === 0) {
+        mostrarMensaje('Advertencia', 'Este grupo no tiene estudiantes asignados', 'warning');
+        return;
+    }
+
+    // Establecer información del grupo
+    document.getElementById('citacion-grupo-nombre').textContent = 
+        `${grupoSeleccionado.grado.nombreGrado} - Grupo ${grupoSeleccionado.numeroGrupo}`;
+    document.getElementById('citacion-total-estudiantes').textContent = estudiantesDelGrupo.length;
+
+    // Establecer fecha mínima (hoy) y sugerida (mañana a las 14:00)
+    const ahora = new Date();
+    const manana = new Date(ahora);
+    manana.setDate(manana.getDate() + 1);
+    manana.setHours(14, 0, 0, 0);
+
+    const fechaInput = document.getElementById('citacion-fecha');
+    fechaInput.min = ahora.toISOString().slice(0, 16);
+    fechaInput.value = manana.toISOString().slice(0, 16);
+
+    // Cargar lista de estudiantes
+    cargarListaEstudiantesCitacion();
+
+    // Abrir modal
+    abrirModal('modal-citaciones');
+}
+
+/**
+ * Cargar la lista de estudiantes para selección
+ */
+function cargarListaEstudiantesCitacion() {
+    const lista = document.getElementById('estudiantes-citacion-lista');
+    lista.innerHTML = '';
+
+    estudiantesDelGrupo.forEach((estudiante, index) => {
+        const nombre = estudiante.persona ? estudiante.persona.nombre : 'Sin Nombre';
+        const apellido = estudiante.persona ? estudiante.persona.apellido : 'Sin Apellido';
+        const tieneAcudiente = estudiante.acudiente && estudiante.acudiente.idAcudiente;
+
+        const div = document.createElement('div');
+        div.className = 'estudiante-item';
+        
+        if (!tieneAcudiente) {
+            div.innerHTML = `
+                <label class="estudiante-label disabled" title="Este estudiante no tiene acudiente asignado">
+                    <input type="checkbox" disabled>
+                    <span class="estudiante-nombre">${nombre} ${apellido}</span>
+                    <span class="estudiante-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Sin acudiente
+                    </span>
+                </label>
+            `;
+        } else {
+            div.innerHTML = `
+                <label class="estudiante-label">
+                    <input type="checkbox" class="checkbox-estudiante" 
+                           data-codigo="${estudiante.codigoEstudiante}"
+                           data-acudiente="${estudiante.acudiente.idAcudiente}">
+                    <span class="estudiante-nombre">${nombre} ${apellido}</span>
+                    <span class="acudiente-info">
+                        Acudiente: ${estudiante.acudiente.persona ? 
+                            estudiante.acudiente.persona.nombre + ' ' + estudiante.acudiente.persona.apellido : 
+                            'Sin información'}
+                    </span>
+                </label>
+            `;
+        }
+
+        lista.appendChild(div);
+    });
+}
+
+/**
+ * Seleccionar/deseleccionar todos los estudiantes
+ */
+function toggleSeleccionarTodos() {
+    const checkboxPrincipal = document.getElementById('citacion-seleccionar-todos');
+    const checkboxes = document.querySelectorAll('.checkbox-estudiante');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = checkboxPrincipal.checked;
+    });
+}
+
+/**
+ * Generar citaciones para los estudiantes seleccionados
+ */
+async function generarCitaciones() {
+    const fechaCitacion = document.getElementById('citacion-fecha').value;
+    
+    if (!fechaCitacion) {
+        mostrarMensaje('Advertencia', 'Por favor seleccione una fecha y hora para la citación', 'warning');
+        return;
+    }
+
+    // Obtener estudiantes seleccionados
+    const checkboxes = document.querySelectorAll('.checkbox-estudiante:checked');
+    
+    if (checkboxes.length === 0) {
+        mostrarMensaje('Advertencia', 'Por favor seleccione al menos un estudiante', 'warning');
+        return;
+    }
+
+    // Preparar datos para enviar
+    const codigosEstudiantes = Array.from(checkboxes).map(cb => 
+        parseInt(cb.dataset.codigo)
+    );
+
+    const datosEnvio = {
+        codigosEstudiantes: codigosEstudiantes,
+        fechaCitacion: fechaCitacion
+    };
+
+    try {
+        // Mostrar indicador de carga
+        document.getElementById('btn-confirmar-citaciones').disabled = true;
+        document.getElementById('btn-confirmar-citaciones').innerHTML = 
+            '<i class="fas fa-spinner fa-spin"></i> Generando...';
+
+        // Enviar petición al backend
+        const response = await fetch(`${API_CITACIONES_URL}/crear-multiples`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(datosEnvio)
+        });
+
+        const resultado = await response.json();
+
+        // Restaurar botón
+        document.getElementById('btn-confirmar-citaciones').disabled = false;
+        document.getElementById('btn-confirmar-citaciones').innerHTML = 
+            '<i class="fas fa-paper-plane"></i> Generar Citaciones';
+
+        if (response.ok) {
+            cerrarModal('modal-citaciones');
+            mostrarMensaje(
+                'Éxito', 
+                `Se generaron ${resultado.citacionesCreadas} citación(es) exitosamente`, 
+                'success'
+            );
+        } else {
+            mostrarMensaje('Error', resultado.mensaje || 'Error al generar las citaciones', 'error');
+        }
+
+    } catch (error) {
+        console.error('Error al generar citaciones:', error);
+        
+        // Restaurar botón
+        document.getElementById('btn-confirmar-citaciones').disabled = false;
+        document.getElementById('btn-confirmar-citaciones').innerHTML = 
+            '<i class="fas fa-paper-plane"></i> Generar Citaciones';
+        
+        mostrarMensaje('Error', 'Error al comunicarse con el servidor', 'error');
+    }
+}
+
+// ==================== FIN FUNCIONES DE CITACIONES ====================
+
 /**
  * Abre un modal con previsualización del PDF y opción de descarga
  */
 function abrirModalPrevisualizacionPDF(pdfUrl, pdfBlob) {
-    // Cerrar modal existente si está abierto
     const modalExistente = document.getElementById('modal-previsualizacion-pdf');
     if (modalExistente) {
         modalExistente.remove();
     }
     
-    // Crear el modal
     const modal = document.createElement('div');
     modal.id = 'modal-previsualizacion-pdf';
     modal.className = 'modal show';
@@ -587,7 +743,6 @@ function abrirModalPrevisualizacionPDF(pdfUrl, pdfBlob) {
     
     document.body.appendChild(modal);
     
-    // Guardar referencia al blob para descarga
     window.currentPdfBlob = pdfBlob;
     window.currentPdfUrl = pdfUrl;
 }
@@ -598,7 +753,6 @@ function abrirModalPrevisualizacionPDF(pdfUrl, pdfBlob) {
 function cerrarModalPDF() {
     const modal = document.getElementById('modal-previsualizacion-pdf');
     if (modal) {
-        // Liberar la URL del objeto
         if (window.currentPdfUrl) {
             URL.revokeObjectURL(window.currentPdfUrl);
         }
@@ -615,10 +769,8 @@ function descargarPDF() {
         return;
     }
     
-    // Crear nombre de archivo
     const nombreArchivo = `Listado_${grupoSeleccionado.grado.nombreGrado.replace(/ /g, '_')}_Grupo${grupoSeleccionado.numeroGrupo}.pdf`;
     
-    // Crear enlace temporal para descarga
     const link = document.createElement('a');
     link.href = window.currentPdfUrl;
     link.download = nombreArchivo;
@@ -637,12 +789,9 @@ function imprimirPDF() {
     if (iframe && iframe.contentWindow) {
         iframe.contentWindow.print();
     } else {
-        // Fallback: abrir en nueva ventana para imprimir
         window.open(window.currentPdfUrl, '_blank');
     }
 }
-
-
 
 // Funciones de estado de UI
 function mostrarEstadoVacio() {
