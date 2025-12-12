@@ -30,10 +30,6 @@ public class Boletin {
     @Column(name = "fecha_generacion", nullable = false)
     private LocalDateTime fechaGeneracion;
 
-    @Lob
-    @Column(name = "archivo_pdf", nullable = true)
-    private byte[] archivoPdf;
-
     @PrePersist
     protected void onCreate() {
         fechaGeneracion = LocalDateTime.now();

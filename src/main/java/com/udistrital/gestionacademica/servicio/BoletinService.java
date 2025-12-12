@@ -66,7 +66,6 @@ public class BoletinService {
         }
 
         boletin.setFechaGeneracion(java.time.LocalDateTime.now());
-        boletin.setArchivoPdf(pdfBytes);
 
         boletinRepository.save(boletin);
         log.info("Boletín guardado exitosamente en base de datos. ID: {}", boletin.getIdBoletin());

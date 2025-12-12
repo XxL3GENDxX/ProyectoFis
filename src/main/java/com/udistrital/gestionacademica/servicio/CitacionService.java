@@ -23,7 +23,6 @@ public class CitacionService {
 
     private final CitacionRepository citacionRepository;
     private final EstudianteRepository estudianteRepository;
-    private final AcudienteRepository acudienteRepository;
     private final emailService emailService;
 
     /**
