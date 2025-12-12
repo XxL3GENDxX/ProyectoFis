@@ -358,21 +358,6 @@ function mostrarCalificaciones(estudiante, calificaciones) {
     calificacionesSection.style.display = 'block';
 }
 
-// ========== APLICAR FILTRO DE PERÍODO ==========
-
-function aplicarFiltrosPeriodo() {
-    const idPeriodo = document.getElementById('select-periodo-filtro').value;
-    periodoSeleccionadoFiltro = idPeriodo ? parseInt(idPeriodo) : null;
-
-    let calificacionesFiltradas = calificacionesCargadas;
-
-    if (periodoSeleccionadoFiltro) {
-        calificacionesFiltradas = calificacionesCargadas.filter(c => c.periodo.idPeriodo === periodoSeleccionadoFiltro);
-    }
-
-    mostrarCalificaciones(estudianteActual, calificacionesFiltradas);
-}
-
 // ========== ASIGNAR LOGRO ==========
 
 function abrirModalAsignarLogro() {

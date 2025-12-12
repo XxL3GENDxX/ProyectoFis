@@ -314,26 +314,6 @@ public class emailService {
         );
     }
 
-    /**
-     * Enviar correo de prueba
-     */
-    public void enviarCorreoPrueba(String destinatario) throws MessagingException {
-        String asunto = "Correo de Prueba - " + nombreInstitucion;
-        String contenido = """
-            <html>
-            <body style="font-family: Arial, sans-serif; padding: 20px;">
-                <h2 style="color: #2563eb;">✅ Configuración de Correo Exitosa</h2>
-                <p>Este es un correo de prueba del sistema de gestión académica.</p>
-                <p>Si recibió este mensaje, significa que el servicio de correo está funcionando correctamente.</p>
-                <hr>
-                <p style="color: #64748b; font-size: 12px;">%s</p>
-            </body>
-            </html>
-            """.formatted(nombreInstitucion);
-
-        enviarCorreoHtml(destinatario, asunto, contenido);
-        log.info("Correo de prueba enviado a: {}", destinatario);
-    }
 
     /**
      * Enviar correo de notificación de entrevista para preinscripción
