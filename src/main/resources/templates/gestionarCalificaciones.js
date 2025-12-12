@@ -39,8 +39,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Verificar rol de usuario y ajustar interfaz
 async function verificarRolUsuario() {
-    const usuario = sessionStorage.getItem('nombreUsuario');
-    const rolUsuario = sessionStorage.getItem('rolUsuario');
+    const usuario = localStorage.getItem('nombreUsuario');
+    const rolUsuario = localStorage.getItem('rolUsuario');
 
     if (rolUsuario === 'Acudiente') {
         console.log('Usuario es Acudiente, cargando estudiantes asignados');
