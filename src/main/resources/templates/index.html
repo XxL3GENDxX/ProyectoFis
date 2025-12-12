@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Inicio - Sistema de Gestión Académica</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="index.css" />
+  </head>
+
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar">
+      <div class="navbar-container">
+        <div class="logo">
+          <i class="fas fa-graduation-cap"></i>
+          <span>Logo Colegio</span>
+        </div>
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+          <i class="fas fa-bars"></i>
+        </button>
+        <ul class="nav-links" id="navLinks">
+          <li>
+            <a href="#" class="active" onclick="showSection('nosotros')"
+              >Nosotros</a
+            >
+          </li>
+          <li>
+            <a href="#" onclick="showSection('admisiones')">Admisiones</a>
+          </li>
+          <li>
+            <a href="inicioSesion.html" class="btn-login">
+              <i class="fas fa-sign-in-alt"></i>
+              Iniciar Sesión
+            </a>
+          </li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-content">
+        <h1><i class="fas fa-school"></i> Bienvenidos a Nuestro Colegio</h1>
+        <p>
+          Formando líderes del mañana con excelencia académica y valores sólidos
+        </p>
+      </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Sección Nosotros -->
+      <section id="nosotros" class="content-section active">
+        <h2
+          style="
+            text-align: center;
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 3rem;
+          "
+        >
+          Sobre Nosotros
+        </h2>
+
+        <div class="about-grid">
+          <div class="about-card">
+            <i class="fas fa-book-reader"></i>
+            <h3>Nuestra Historia</h3>
+            <p>
+              Con más de 50 años de experiencia en educación, hemos formado
+              generaciones de estudiantes comprometidos con la excelencia
+              académica y el desarrollo integral de la persona.
+            </p>
+          </div>
+
+          <div class="about-card">
+            <i class="fas fa-users"></i>
+            <h3>Comunidad Educativa</h3>
+            <p>
+              Contamos con un equipo de profesionales altamente calificados,
+              comprometidos con la educación de calidad y el bienestar de
+              nuestros estudiantes.
+            </p>
+          </div>
+
+          <div class="about-card">
+            <i class="fas fa-trophy"></i>
+            <h3>Excelencia Académica</h3>
+            <p>
+              Reconocidos por nuestros altos estándares académicos y programas
+              innovadores que preparan a nuestros estudiantes para los desafíos
+              del futuro.
+            </p>
+          </div>
+        </div>
+
+        <div class="mission-vision">
+          <div class="mv-card">
+            <h3><i class="fas fa-bullseye"></i> Misión</h3>
+            <p>
+              Formar ciudadanos íntegros, críticos y creativos, capaces de
+              contribuir positivamente a la sociedad a través de una educación
+              de calidad que promueva el desarrollo de competencias académicas,
+              sociales y emocionales.
+            </p>
+          </div>
+
+          <div class="mv-card">
+            <h3><i class="fas fa-eye"></i> Visión</h3>
+            <p>
+              Ser reconocidos como una institución educativa líder en innovación
+              pedagógica y formación integral, preparando estudiantes
+              competentes para enfrentar los retos del siglo XXI con valores
+              sólidos y pensamiento crítico.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sección Admisiones -->
+      <section id="admisiones" class="content-section">
+        <div class="admissions-form">
+          <h2><i class="fas fa-file-alt"></i> Formulario de Admisión</h2>
+          <p class="subtitle">
+            Complete los datos para iniciar el proceso de matrícula
+          </p>
+
+          <form id="formAdmision" onsubmit="enviarSolicitud(event)">
+            <!-- Información del Estudiante -->
+            <div class="form-section">
+              <h3>Información del Estudiante</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="numIdentificacion"
+                    >Número de Identificación:</label
+                  >
+                  <input
+                    type="text"
+                    id="numIdentificacion"
+                    name="numIdentificacion"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="nombre">Nombre:</label>
+                  <input type="text" id="nombre" name="nombre" required />
+                </div>
+                <div class="form-group">
+                  <label for="apellido">Apellido:</label>
+                  <input type="text" id="apellido" name="apellido" required />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="fechaNacimiento">Fecha de Nacimiento:</label>
+                  <input
+                    type="date"
+                    id="fechaNacimiento"
+                    name="fechaNacimiento"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="generoEstudiante">Género:</label>
+                  <select
+                    id="generoEstudiante"
+                    name="generoEstudiante"
+                    required
+                  >
+                    <option value="">Seleccione...</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Información del Acudiente -->
+            <div class="form-section">
+              <h3>Información del Acudiente</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="numIdentificacionAcudiente"
+                    >Número de Identificación:</label
+                  >
+                  <input
+                    type="text"
+                    id="numIdentificacionAcudiente"
+                    name="numIdentificacionAcudiente"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="nombreAcudiente">Nombre:</label>
+                  <input
+                    type="text"
+                    id="nombreAcudiente"
+                    name="nombreAcudiente"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="apellidoAcudiente">Apellido:</label>
+                  <input
+                    type="text"
+                    id="apellidoAcudiente"
+                    name="apellidoAcudiente"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="fechaNacimientoAcudiente"
+                    >Fecha de Nacimiento:</label
+                  >
+                  <input
+                    type="date"
+                    id="fechaNacimientoAcudiente"
+                    name="fechaNacimientoAcudiente"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="generoAcudiente">Género:</label>
+                  <select id="generoAcudiente" name="generoAcudiente" required>
+                    <option value="">Seleccione...</option>
+                    <option value="Masculino">Masculino</option>
+                    <option value="Femenino">Femenino</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="telefono">Teléfono:</label>
+                  <input type="tel" id="telefono" name="telefono" required />
+                </div>
+                <div class="form-group">
+                  <label for="email">Correo Electrónico:</label>
+                  <input type="email" id="email" name="email" required />
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-submit">
+              <i class="fas fa-paper-plane"></i> Enviar Solicitud
+            </button>
+          </form>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>Contacto</h3>
+          <p>
+            <i class="fas fa-map-marker-alt"></i> Dirección: Calle Principal
+            #123, Bogotá
+          </p>
+          <p><i class="fas fa-phone"></i> Teléfono: (601) 234-5678</p>
+          <p><i class="fas fa-envelope"></i> Email: info@colegio.edu.co</p>
+        </div>
+
+        <div class="footer-section">
+          <h3>Horarios</h3>
+          <p>Lunes a Viernes: 7:00 AM - 3:00 PM</p>
+          <p>Atención Administrativa: 8:00 AM - 5:00 PM</p>
+        </div>
+
+        <div class="footer-section">
+          <h3>Síguenos</h3>
+          <div class="social-links">
+            <a href="#"><i class="fab fa-facebook-f"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+            <a href="#"><i class="fab fa-youtube"></i></a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2025 Colegio. Todos los derechos reservados.</p>
+      </div>
+    </footer>
+
+    <script src="index.js"></script>
+  </body>
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Calificaciones</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="gestionarCalificaciones.css">
+</head>
+
+<body>
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-name">Nombre Usuario</div>
+                <div class="user-role">Administrador</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="panelGestion.html" class="menu-item">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="gestionarEstudiantes.html" class="menu-item">
+                <i class="fas fa-user-graduate"></i>
+                <span>Gestor estudiantes</span>
+            </a>
+            <a href="gestionarGrupos.html" class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Gestor de grupos</span>
+            </a>
+            <a href="gestionarLogros.html" class="menu-item">
+                <i class="fas fa-trophy"></i>
+                <span>Gestor de logros</span>
+            </a>
+            <a href="gestionarCalificaciones.html" class="menu-item active">
+                <i class="fas fa-star"></i>
+                <span>Gestor de calificaciones</span>
+            </a>
+            <a href="gestionarObservador.html" class="menu-item">
+                <i class="fas fa-eye"></i>
+                <span>Gestor de observador</span>
+            </a>
+            <a href="gestionarUsuarios.html" class="menu-item">
+                <i class="fas fa-user-tie"></i>
+                <span>Gestor de usuarios</span>
+            </a>
+            <a href="gestionarPreinscripciones.html" class="menu-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Gestor de preinscripciones</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="inicioSesion.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1><i class="fas fa-star"></i> Gestor de Calificaciones</h1>
+            <nav class="breadcrumb">
+                <span>Inicio</span> <i class="fas fa-chevron-right"></i> <span>Gestor de Calificaciones</span>
+            </nav>
+        </div>
+
+        <div class="content-body">
+            <!-- Sección de búsqueda y filtros -->
+            <section class="search-section">
+                <div class="search-bar">
+                    <input type="text" id="txt-buscar-estudiante"
+                        placeholder="Buscar estudiante por nombre o documento..." class="search-input">
+                    <button class="search-button" onclick="buscarEstudiante()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div class="filter-section">
+                    <label for="select-periodo-filtro">Filtrar por período:</label>
+                    <select id="select-periodo-filtro" class="form-select" onchange="aplicarFiltrosPeriodo()">
+                        <option value="">Todos los períodos</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Selector de estudiantes para Acudiente (inicialmente oculto) -->
+            <section class="search-section" id="acudiente-selector-section" style="display: none;">
+                <div class="form-group">
+                    <label for="select-estudiante-acudiente">Seleccione un estudiante:</label>
+                    <select id="select-estudiante-acudiente" class="form-select" onchange="seleccionarEstudianteAcudiente()">
+                        <option value="">Seleccione...</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Estado inicial: Mensaje de búsqueda -->
+            <section class="empty-search-state" id="empty-search-state">
+                <div class="empty-search-content">
+                    <i class="fas fa-search empty-search-icon"></i>
+                    <h3>Busca un estudiante para gestionar sus calificaciones</h3>
+                </div>
+            </section>
+
+            <!-- Estado de carga -->
+            <section class="loading-state" id="loading-state" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Buscando estudiante...</p>
+            </section>
+
+            <!-- Resultados: Calificaciones del estudiante -->
+            <section class="calificaciones-section" id="calificaciones-section" style="display: none;">
+                <div class="calificaciones-header">
+                    <div class="estudiante-info">
+                        <h2 id="calificaciones-titulo">Calificaciones de: <span id="nombre-estudiante"></span></h2>
+                        <div class="stats-badges">
+                            <span class="badge badge-info">
+                                <i class="fas fa-award"></i> Total logros: <span id="total-logros">0</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="calificaciones-actions">
+                        <button class="btn btn-primary" id="btn-asignar-logro">
+                            <i class="fas fa-plus"></i> Asignar Logro
+                        </button>
+                        <button class="btn btn-secondary" id="btn-consultar-historial">
+                            <i class="fas fa-history"></i> Histórico por Período
+                        </button>
+                        <button class="btn btn-success" id="btn-generar-boletin">
+                            <i class="fas fa-file-pdf"></i> Generar Boletín
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tabla de calificaciones -->
+                <div class="table-container">
+                    <table class="data-table" id="tabla-calificaciones">
+                        <thead>
+                            <tr>
+                                <th>Período</th>
+                                <th>Categoría</th>
+                                <th>Logro</th>
+                                <th>Fecha Asignación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-calificaciones">
+                            <!-- Las calificaciones se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Estado vacío cuando no hay calificaciones -->
+                <div class="empty-calificaciones-state" id="empty-calificaciones-state" style="display: none;">
+                    <i class="fas fa-star"></i>
+                    <p>Este estudiante aún no tiene logros asignados</p>
+                    <button class="btn btn-primary" onclick="abrirModalAsignarLogro()">
+                        <i class="fas fa-plus"></i> Asignar primer logro
+                    </button>
+                </div>
+            </section>
+
+            <!-- Estado sin resultados -->
+            <section class="no-results-state" id="no-results-state" style="display: none;">
+                <i class="fas fa-user-slash"></i>
+                <h3>No se encontró el estudiante</h3>
+                <p>Intenta con otro nombre o documento</p>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal para asignar logro -->
+    <div class="modal" id="modal-asignar-logro">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-plus-circle"></i> Asignar Logro</h2>
+                <button class="modal-close" onclick="cerrarModal('modal-asignar-logro')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-asignar-logro" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="select-periodo-asignar">
+                            Período: <span class="campo-obligatorio">*</span>
+                        </label>
+                        <select id="select-periodo-asignar" class="form-select" required>
+                            <option value="">Seleccione un período</option>
+                        </select>
+                        <small class="form-help">Seleccione el período en el cual asignará el logro</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="select-categoria-logro">
+                            Categoría: <span class="campo-obligatorio">*</span>
+                        </label>
+                        <select id="select-categoria-logro" class="form-select" required>
+                            <option value="">Seleccione una categoría</option>
+                            <option value="psicosociales">Psicosociales</option>
+                            <option value="academicos">Académicos</option>
+                            <option value="deportivos">Deportivos</option>
+                            <option value="artisticos">Artísticos</option>
+                            <option value="culturales">Culturales</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="select-logro">
+                            Logro: <span class="campo-obligatorio">*</span>
+                        </label>
+                        <select id="select-logro" class="form-select" required disabled>
+                            <option value="">Primero seleccione una categoría</option>
+                        </select>
+                        <small class="form-help">Seleccione primero una categoría para ver los logros
+                            disponibles</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-asignar-logro')">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-success" id="btn-confirmar-asignar">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para modificar asignación -->
+    <div class="modal" id="modal-modificar-asignacion">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Modificar Logro</h2>
+                <button class="modal-close" onclick="cerrarModal('modal-modificar-asignacion')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-modificar-asignacion" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="modificar-periodo">Período:</label>
+                        <input type="text" id="modificar-periodo" class="form-input" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modificar-categoria-actual">Categoría Actual:</label>
+                        <input type="text" id="modificar-categoria-actual" class="form-input" readonly>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modificar-logro-actual">Logro Actual:</label>
+                        <input type="text" id="modificar-logro-actual" class="form-input" readonly>
+                    </div>
+
+                    <hr style="margin: 1.5rem 0; border: none; border-top: 2px solid var(--border-color);">
+
+                    <div class="form-group">
+                        <label for="modificar-nueva-categoria">
+                            Nueva Categoría: <span class="campo-obligatorio">*</span>
+                        </label>
+                        <select id="modificar-nueva-categoria" class="form-select" required onchange="cargarNuevosLogrosPorCategoria()">
+                            <option value="">Seleccione una categoría</option>
+                            <option value="psicosociales">Psicosociales</option>
+                            <option value="academicos">Académicos</option>
+                            <option value="deportivos">Deportivos</option>
+                            <option value="artisticos">Artísticos</option>
+                            <option value="culturales">Culturales</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modificar-nuevo-logro">
+                            Nuevo Logro: <span class="campo-obligatorio">*</span>
+                        </label>
+                        <select id="modificar-nuevo-logro" class="form-select" required disabled>
+                            <option value="">Primero seleccione una categoría</option>
+                        </select>
+                    </div>
+
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-modificar-asignacion')">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-success" id="btn-confirmar-modificar">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmar eliminación -->
+    <div class="modal" id="modal-confirmar-eliminar">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h2>
+                <button class="modal-close" onclick="cerrarModal('modal-confirmar-eliminar')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <p>¿Está seguro que desea eliminar el logro <strong id="nombre-logro-eliminar"></strong>?</p>
+                <p class="warning-text">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Esta acción no se puede deshacer
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-confirmar-eliminar')">
+                    Cancelar
+                </button>
+                <button class="btn btn-danger" id="btn-confirmar-eliminar-calificacion">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para seleccionar período del boletín -->
+    <div class="modal" id="modal-seleccionar-periodo-boletin">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2><i class="fas fa-calendar-alt"></i> Seleccionar Período</h2>
+                <button class="modal-close" onclick="cerrarModal('modal-seleccionar-periodo-boletin')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="select-periodo-boletin">
+                        Período del boletín: <span class="campo-obligatorio">*</span>
+                    </label>
+                    <select id="select-periodo-boletin" class="form-select" required>
+                        <option value="">Seleccione...</option>
+                    </select>
+                    <small class="form-help">Seleccione el período académico para generar el boletín</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-seleccionar-periodo-boletin')">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-success" id="btn-confirmar-generar-boletin" onclick="confirmarGeneracionBoletin()">
+                    <i class="fas fa-file-pdf"></i> Generar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para mensajes -->
+    <div class="modal" id="modal-mensaje">
+        <div class="modal-content modal-small">
+            <div class="modal-body text-center">
+                <i id="modal-mensaje-icono" class="modal-icon"></i>
+                <h3 id="modal-mensaje-titulo"></h3>
+                <p id="modal-mensaje-texto"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="cerrarModal('modal-mensaje')">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="sidebarCommon.js"></script>
+    <script src="gestionarCalificaciones.js"></script>
+</body>
+
+</html>

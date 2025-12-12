@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Observador</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="gestionarObservador.css">
+</head>
+
+<body>
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-name">Nombre Usuario</div>
+                <div class="user-role">Administrador</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="panelGestion.html" class="menu-item">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="gestionarEstudiantes.html" class="menu-item">
+                <i class="fas fa-user-graduate"></i>
+                <span>Gestor estudiantes</span>
+            </a>
+            <a href="gestionarGrupos.html" class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Gestor de grupos</span>
+            </a>
+            <a href="gestionarLogros.html" class="menu-item">
+                <i class="fas fa-trophy"></i>
+                <span>Gestor de logros</span>
+            </a>
+            <a href="gestionarCalificaciones.html" class="menu-item active">
+                <i class="fas fa-star"></i>
+                <span>Gestor de calificaciones</span>
+            </a>
+            <a href="gestionarObservador.html" class="menu-item active">
+                <i class="fas fa-eye"></i>
+                <span>Gestor de observador</span>
+            </a>
+            <a href="gestionarUsuarios.html" class="menu-item">
+                <i class="fas fa-user-tie"></i>
+                <span>Gestor de usuarios</span>
+            </a>
+            <a href="gestionarPreinscripciones.html" class="menu-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Gestor de preinscripciones</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="inicioSesion.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1><i class="fas fa-eye"></i> Gestor de Observador</h1>
+            <nav class="breadcrumb">
+                <span>Inicio</span> <i class="fas fa-chevron-right"></i> <span>Gestor de Observador</span>
+            </nav>
+        </div>
+
+        <div class="content-body">
+            <!-- Sección de búsqueda -->
+            <section class="search-section">
+                <div class="search-bar">
+                    <input type="text" id="txt-buscar-estudiante" placeholder="Buscar estudiante por nombre, ID..."
+                        class="search-input">
+                    <button class="search-button" onclick="buscarEstudiante()">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Estado inicial: Mensaje de búsqueda -->
+            <section class="empty-search-state" id="empty-search-state">
+                <div class="empty-search-content">
+                    <i class="fas fa-search empty-search-icon"></i>
+                    <h3>Busca un estudiante para ver su historial de observaciones.</h3>
+                </div>
+            </section>
+
+            <!-- Estado de carga -->
+            <section class="loading-state" id="loading-state" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Buscando estudiante...</p>
+            </section>
+
+            <!-- Resultados: Observador del estudiante -->
+            <section class="observador-section" id="observador-section" style="display: none;">
+                <div class="observador-header">
+                    <h2 id="observador-titulo">Observador de: <span id="nombre-estudiante"></span></h2>
+                    <div class="observador-actions">
+                        <button class="btn btn-secondary" id="btn-ver-hoja-vida">
+                            <i class="fas fa-user"></i> Ver Hoja de Vida
+                        </button>
+                        <button class="btn btn-primary" id="btn-anadir-observacion">
+                            <i class="fas fa-plus"></i> Añadir Observación
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Lista de observaciones -->
+                <div class="observaciones-container" id="observaciones-container">
+                    <!-- Las observaciones se cargarán dinámicamente -->
+                </div>
+
+                <!-- Estado vacío cuando no hay observaciones -->
+                <div class="empty-observaciones-state" id="empty-observaciones-state" style="display: none;">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>No hay observaciones registradas para este estudiante</p>
+                    <button class="btn btn-primary" onclick="abrirModalNuevaObservacion()">
+                        <i class="fas fa-plus"></i> Crear primera observación
+                    </button>
+                </div>
+            </section>
+
+            <!-- Estado sin resultados -->
+            <section class="no-results-state" id="no-results-state" style="display: none;">
+                <i class="fas fa-user-slash"></i>
+                <h3>No se encontró el estudiante</h3>
+                <p>Intenta con otro nombre o ID</p>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal para añadir/editar observación -->
+    <div class="modal" id="modal-observacion">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-observacion-titulo">Nueva Observación</h2>
+                <button class="modal-close" onclick="cerrarModal('modal-observacion')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-observacion" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="observacion-titulo">Título:</label>
+                        <input type="text" id="observacion-titulo" class="form-input"
+                            placeholder="Ej: Adaptación al grupo" required maxlength="200">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="observacion-descripcion">Descripción:</label>
+                        <textarea id="observacion-descripcion" class="form-textarea"
+                            placeholder="Describe la observación en detalle..." rows="5" required
+                            maxlength="1000"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success btn-block" id="btn-guardar-observacion">
+                    Guardar Observación
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para ver hoja de vida del estudiante -->
+    <div class="modal" id="modal-hoja-vida">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2>Hoja de Vida del Estudiante</h2>
+                <button class="modal-close" onclick="cerrarModal('modal-hoja-vida')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="hoja-vida-content">
+                    <!-- Información personal -->
+                    <div class="info-section">
+                        <div class="info-row">
+                            <span class="info-label">Nombre:</span>
+                            <span class="info-value" id="hv-nombre"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Grado:</span>
+                            <span class="info-value" id="hv-grado"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Grupo:</span>
+                            <span class="info-value" id="hv-grupo"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Estado:</span>
+                            <span class="info-value" id="hv-estado"></span>
+                        </div>
+                    </div>
+
+                    <!-- Información del acudiente -->
+                    <div class="info-section">
+                        <h3>Información del Acudiente</h3>
+                        <div class="info-row">
+                            <span class="info-label">Acudiente:</span>
+                            <span class="info-value" id="hv-acudiente"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Teléfono Acudiente:</span>
+                            <span class="info-value" id="hv-telefono"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Correo Acudiente:</span>
+                            <span class="info-value" id="hv-correo"></span>
+                        </div>
+                    </div>
+
+                    <!-- Información médica -->
+                    <div class="info-section">
+                        <h3>Información Médica</h3>
+                        <div class="info-row">
+                            <span class="info-label">Alergias:</span>
+                            <span class="info-value" id="hv-alergias"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Enfermedades:</span>
+                            <span class="info-value" id="hv-enfermedades"></span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">Problemas de Aprendizaje:</span>
+                            <span class="info-value" id="hv-problemas-aprendizaje"></span>
+                        </div>
+                    </div>
+
+                    <!-- Otros aspectos -->
+                    <div class="info-section">
+                        <h3>Otros Aspectos Relevantes:</h3>
+                        <p class="info-text" id="hv-otros-aspectos"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmar eliminación -->
+    <div class="modal" id="modal-confirmar-eliminar">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h2>
+                <button class="modal-close" onclick="cerrarModal('modal-confirmar-eliminar')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <p>¿Está seguro que desea eliminar la observación <strong id="titulo-observacion-eliminar"></strong>?
+                </p>
+                <p class="warning-text">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Esta acción no se puede deshacer
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-confirmar-eliminar')">
+                    Cancelar
+                </button>
+                <button class="btn btn-danger" id="btn-confirmar-eliminar-observacion">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para mensajes -->
+    <div class="modal" id="modal-mensaje">
+        <div class="modal-content modal-small">
+            <div class="modal-body text-center">
+                <i id="modal-mensaje-icono" class="modal-icon"></i>
+                <h3 id="modal-mensaje-titulo"></h3>
+                <p id="modal-mensaje-texto"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="cerrarModal('modal-mensaje')">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="sidebarCommon.js"></script>
+    <script src="gestionarObservador.js"></script>
+</body>
+
+</html>

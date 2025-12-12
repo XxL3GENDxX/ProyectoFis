@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Grupos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="gestionarGrupos.css">
+</head>
+
+<body>
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-name">Nombre Usuario</div>
+                <div class="user-role">Administrador</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="panelGestion.html" class="menu-item">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="gestionarEstudiantes.html" class="menu-item">
+                <i class="fas fa-user-graduate"></i>
+                <span>Gestor estudiantes</span>
+            </a>
+            <a href="gestionarGrupos.html" class="menu-item active">
+                <i class="fas fa-users"></i>
+                <span>Gestor de grupos</span>
+            </a>
+            <a href="gestionarLogros.html" class="menu-item">
+                <i class="fas fa-trophy"></i>
+                <span>Gestor de logros</span>
+            </a>
+            <a href="gestionarCalificaciones.html" class="menu-item active">
+                <i class="fas fa-star"></i>
+                <span>Gestor de calificaciones</span>
+            </a>
+            <a href="gestionarObservador.html" class="menu-item">
+                <i class="fas fa-eye"></i>
+                <span>Gestor de observador</span>
+            </a>
+            <a href="gestionarUsuarios.html" class="menu-item">
+                <i class="fas fa-user-tie"></i>
+                <span>Gestor de usuarios</span>
+            </a>
+            <a href="gestionarPreinscripciones.html" class="menu-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Gestor de preinscripciones</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="inicioSesion.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1><i class="fas fa-users"></i> Gestor de Grupos</h1>
+            <nav class="breadcrumb">
+                <span>Inicio</span> <i class="fas fa-chevron-right"></i> <span>Gestor de Grupos</span>
+            </nav>
+        </div>
+
+        <div class="content-body">
+            <!-- Sección de búsqueda -->
+            <section class="search-section">
+                <div class="search-container">
+                    <div class="search-bar">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text" id="txt-buscar-grupo" placeholder="Buscar grupo por grado o número..."
+                            class="search-input">
+                    </div>
+                    <button class="btn btn-primary" id="btn-crear-grupo">
+                        <i class="fas fa-plus"></i> Crear nuevo grupo
+                    </button>
+                </div>
+            </section>
+
+            <!-- Estado inicial: Mensaje de búsqueda -->
+            <section class="empty-search-state" id="empty-search-state">
+                <div class="empty-search-content">
+                    <i class="fas fa-search empty-search-icon"></i>
+                    <h3>Busca un grupo para ver su información y gestionar a sus estudiantes.</h3>
+                </div>
+            </section>
+
+            <!-- Estado de carga -->
+            <section class="loading-state" id="loading-state" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Buscando grupos...</p>
+            </section>
+
+            <!-- Resultados de búsqueda -->
+            <section class="results-section" id="results-section" style="display: none;">
+                <div class="results-header">
+                    <h2 id="results-title">Resultados para: <span id="search-query"></span></h2>
+                    <button class="btn btn-secondary btn-icon" id="btn-editar-grupo" style="display: none;"
+                        title="Editar grupo">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-danger btn-icon" id="btn-eliminar-grupo" style="display: none;"
+                        title="Eliminar grupo">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+
+                <!-- Tabla de estudiantes del grupo -->
+                <div class="students-table-container" id="students-table-container" style="display: none;">
+                    <div class="table-header">
+                        <h3>Estudiantes del Grupo</h3>
+                        <div class="table-actions">
+                            <button class="btn btn-success" id="btn-generar-listado">
+                                <i class="fas fa-file-excel"></i> Generar listado
+                            </button>
+                            <button class="btn btn-primary" id="btn-generar-citaciones">
+                                <i class="fas fa-envelope"></i> Generar citaciones
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table" id="tabla-estudiantes-grupo">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Apellido</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-estudiantes-grupo">
+                                <!-- Los estudiantes se cargarán dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Estado vacío cuando no hay estudiantes -->
+                    <div class="empty-students-state" id="empty-students-state" style="display: none;">
+                        <i class="fas fa-user-slash"></i>
+                        <p>Este grupo aún no tiene estudiantes asignados</p>
+                    </div>
+                </div>
+
+                <!-- Lista de grupos cuando se busca por grado -->
+                <div class="groups-list-container" id="groups-list-container" style="display: none;">
+                    <div class="groups-grid" id="groups-grid">
+                        <!-- Los grupos se cargarán dinámicamente -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Estado sin resultados -->
+            <section class="no-results-state" id="no-results-state" style="display: none;">
+                <i class="fas fa-search-minus"></i>
+                <h3>No se encontraron grupos</h3>
+                <p>No hay grupos que coincidan con tu búsqueda</p>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal para crear/editar grupo -->
+    <div class="modal" id="modal-grupo">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-grupo-titulo">
+                    <i class="fas fa-plus-circle"></i> Crear Nuevo Grupo
+                </h2>
+            </div>
+            <div class="modal-body">
+                <form id="form-grupo" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="grupo-grado">
+                            Grado <span class="campo-obligatorio">*</span>
+                        </label>
+                        <select id="grupo-grado" class="form-input" required>
+                            <option value="">Seleccione un grado</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="grupo-numero">
+                            Número de Grupo <span class="campo-obligatorio">*</span>
+                        </label>
+                        <input type="number" id="grupo-numero" class="form-input" placeholder="Ej: 1, 2, 3..." required
+                            min="1">
+                    </div>
+
+                   <div class="form-group">
+                        <label for="grupo-director">
+                            Documento Director de Grupo
+                        </label>
+                        <input type="text" id="grupo-director" class="form-input"
+                            placeholder="Número de documento del profesor" maxlength="20">
+                        <small class="form-help">Opcional - Ingrese el número de documento del profesor que será director</small>
+                    </div>
+
+                    <div class="form-note">
+                        <i class="fas fa-info-circle"></i>
+                        Los campos marcados con <span class="campo-obligatorio">*</span> son obligatorios.
+                        Todos los grupos tienen un límite de <strong>10 estudiantes</strong>.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-grupo')">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" id="btn-guardar-grupo">
+                    <i class="fas fa-save"></i> Guardar Grupo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmar eliminación -->
+    <div class="modal" id="modal-confirmar-eliminar">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h2>
+            </div>
+            <div class="modal-body text-center">
+                <p>¿Está seguro que desea eliminar el grupo <strong id="nombre-grupo-eliminar"></strong>?</p>
+                <p class="warning-text">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Esta acción no se puede deshacer
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-confirmar-eliminar')">
+                    Cancelar
+                </button>
+                <button class="btn btn-danger" id="btn-confirmar-eliminar-grupo">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para mensajes -->
+    <div class="modal" id="modal-mensaje">
+        <div class="modal-content modal-small">
+            <div class="modal-body text-center">
+                <i id="modal-mensaje-icono" class="modal-icon"></i>
+                <h3 id="modal-mensaje-titulo"></h3>
+                <p id="modal-mensaje-texto"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="cerrarModal('modal-mensaje')">Aceptar</button>
+            </div>
+        </div>
+    </div>
+    <script src="sidebarCommon.js"></script>
+    <script src="gestionarGrupos.js"></script>
+</body>
+
+</html>

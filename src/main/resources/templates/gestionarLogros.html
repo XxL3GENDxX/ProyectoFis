@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Logros</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="gestionarLogros.css">
+</head>
+
+<body>
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-name">Nombre Usuario</div>
+                <div class="user-role">Administrador</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="panelGestion.html" class="menu-item">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="gestionarEstudiantes.html" class="menu-item">
+                <i class="fas fa-user-graduate"></i>
+                <span>Gestor estudiantes</span>
+            </a>
+            <a href="gestionarGrupos.html" class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Gestor de grupos</span>
+            </a>
+            <a href="gestionarLogros.html" class="menu-item active">
+                <i class="fas fa-trophy"></i>
+                <span>Gestor de logros</span>
+            </a>
+            <a href="gestionarCalificaciones.html" class="menu-item active">
+                <i class="fas fa-star"></i>
+                <span>Gestor de calificaciones</span>
+            </a>
+            <a href="gestionarObservador.html" class="menu-item">
+                <i class="fas fa-eye"></i>
+                <span>Gestor de observador</span>
+            </a>
+            <a href="gestionarUsuarios.html" class="menu-item">
+                <i class="fas fa-user-tie"></i>
+                <span>Gestor de usuarios</span>
+            </a>
+            <a href="gestionarPreinscripciones.html" class="menu-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Gestor de preinscripciones</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="inicioSesion.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1><i class="fas fa-trophy"></i> Gestor de Logros</h1>
+            <nav class="breadcrumb">
+                <span>Inicio</span> <i class="fas fa-chevron-right"></i> <span>Gestor de Logros</span>
+            </nav>
+        </div>
+
+        <div class="content-body">
+            <!-- Sección de selección de categoría -->
+            <section class="category-section">
+                <div class="category-selector-container">
+                    <select id="select-categoria" class="category-select">
+                        <option value="">-- Seleccione una categoría --</option>
+                        <option value="psicosociales">Psicosociales</option>
+                        <option value="academicos">Académicos</option>
+                        <option value="deportivos">Deportivos</option>
+                        <option value="artisticos">Artísticos</option>
+                        <option value="culturales">Culturales</option>
+                    </select>
+                </div>
+            </section>
+
+            <!-- Estado inicial: Sin categoría seleccionada -->
+            <section class="empty-state" id="empty-state">
+                <!-- Contenido vacío, solo muestra el selector -->
+            </section>
+
+            <!-- Resultados: Tabla de logros -->
+            <section class="results-section" id="results-section" style="display: none;">
+                <div class="results-header">
+                    <h2 id="results-title">Logros <span id="categoria-nombre"></span></h2>
+                    <button class="btn btn-primary" id="btn-crear-logro">
+                        <i class="fas fa-plus"></i> Crear nuevo logro
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="tabla-logros">
+                        <thead>
+                            <tr>
+                                <th>Nombre del Logro</th>
+                                <th>Descripción</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-logros">
+                            <!-- Los logros se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Estado vacío cuando no hay logros -->
+                <div class="empty-logros-state" id="empty-logros-state" style="display: none;">
+                    <i class="fas fa-trophy"></i>
+                    <p>No hay logros en esta categoría</p>
+                    <button class="btn btn-primary" onclick="abrirModalCrearLogro()">
+                        <i class="fas fa-plus"></i> Crear primer logro
+                    </button>
+                </div>
+            </section>
+
+            <!-- Estado de carga -->
+            <section class="loading-state" id="loading-state" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Cargando logros...</p>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal para crear/editar logro -->
+    <div class="modal" id="modal-logro">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-logro-titulo">Crear Nuevo Logro</h2>
+                <button class="modal-close" onclick="cerrarModal('modal-logro')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="form-logro" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="logro-nombre">Nombre del Logro:</label>
+                        <input type="text" id="logro-nombre" class="form-input" placeholder="Ej: Reconoce emociones"
+                            required maxlength="200">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="logro-descripcion">Descripción:</label>
+                        <textarea id="logro-descripcion" class="form-textarea"
+                            placeholder="Describe el logro en detalle..." rows="5" required maxlength="500"></textarea>
+                        <small class="form-help">Máximo 500 caracteres</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success btn-block" id="btn-guardar-logro">
+                    Guardar Logro
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmar eliminación -->
+    <div class="modal" id="modal-confirmar-eliminar">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación</h2>
+                <button class="modal-close" onclick="cerrarModal('modal-confirmar-eliminar')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body text-center">
+                <p>¿Está seguro que desea eliminar el logro <strong id="nombre-logro-eliminar"></strong>?</p>
+                <p class="warning-text">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Esta acción no se puede deshacer
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-confirmar-eliminar')">
+                    Cancelar
+                </button>
+                <button class="btn btn-danger" id="btn-confirmar-eliminar-logro">
+                    <i class="fas fa-trash"></i> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para mensajes -->
+    <div class="modal" id="modal-mensaje">
+        <div class="modal-content modal-small">
+            <div class="modal-body text-center">
+                <i id="modal-mensaje-icono" class="modal-icon"></i>
+                <h3 id="modal-mensaje-titulo"></h3>
+                <p id="modal-mensaje-texto"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="cerrarModal('modal-mensaje')">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="sidebarCommon.js"></script>
+    <script src="gestionarLogros.js"></script>
+</body>
+
+</html>

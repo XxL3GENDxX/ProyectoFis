@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestor de Preinscripciones</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="gestionarPreinscripciones.css" />
+  </head>
+
+  <body>
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="user-info">
+          <div class="user-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="user-name">Nombre Usuario</div>
+          <div class="user-role">Administrador</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <a href="panelGestion.html" class="menu-item">
+          <i class="fas fa-home"></i>
+          <span>Inicio</span>
+        </a>
+        <a href="gestionarEstudiantes.html" class="menu-item">
+          <i class="fas fa-user-graduate"></i>
+          <span>Gestor estudiantes</span>
+        </a>
+        <a href="gestionarGrupos.html" class="menu-item">
+          <i class="fas fa-users"></i>
+          <span>Gestor de grupos</span>
+        </a>
+        <a href="gestionarLogros.html" class="menu-item">
+          <i class="fas fa-trophy"></i>
+          <span>Gestor de logros</span>
+        </a>
+        <a href="gestionarObservador.html" class="menu-item">
+          <i class="fas fa-eye"></i>
+          <span>Gestor de observador</span>
+        </a>
+        <a href="gestionarUsuarios.html" class="menu-item">
+          <i class="fas fa-user-tie"></i>
+          <span>Gestor de usuarios</span>
+        </a>
+        <a href="gestionarPreinscripciones.html" class="menu-item active">
+          <i class="fas fa-clipboard-list"></i>
+          <span>Gestor de preinscripciones</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="inicioSesion.html" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="content-header">
+        <h1>
+          <i class="fas fa-clipboard-list"></i> Gestor de Preinscripciones
+        </h1>
+        <nav class="breadcrumb">
+          <span>Inicio</span> <i class="fas fa-chevron-right"></i>
+          <span>Gestor de Preinscripciones</span>
+        </nav>
+      </div>
+
+      <div class="content-body">
+        <section class="search-section">
+          <div class="search-bar">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              id="txt-buscar-preinscripcion"
+              placeholder="Buscar aspirante por nombre o acudiente..."
+              class="search-input"
+            />
+          </div>
+        </section>
+
+        <section class="table-section">
+          <div class="table-header">
+            <h2>Lista de Preinscripciones</h2>
+          </div>
+
+          <div class="loading-spinner" id="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Cargando preinscripciones...</p>
+          </div>
+
+          <div
+            class="table-responsive"
+            id="tabla-container"
+            style="display: none"
+          >
+            <table class="data-table" id="tabla-preinscripciones">
+              <thead>
+                <tr>
+                  <th>Aspirante</th>
+                  <th>Acudiente</th>
+                  <th>Fecha Preinscripción</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-preinscripciones"></tbody>
+            </table>
+          </div>
+
+          <div class="empty-state" id="empty-state" style="display: none">
+            <i class="fas fa-clipboard-list empty-icon"></i>
+            <h3>No hay preinscripciones registradas</h3>
+            <p>Las nuevas preinscripciones aparecerán aquí</p>
+          </div>
+
+          <div class="error-state" id="error-state" style="display: none">
+            <i class="fas fa-exclamation-triangle error-icon"></i>
+            <h3>Error en la base de datos</h3>
+            <p>
+              No se pudieron cargar las preinscripciones. Por favor, intente
+              nuevamente.
+            </p>
+            <button class="btn btn-primary" onclick="cargarPreinscripciones()">
+              <i class="fas fa-redo"></i> Reintentar
+            </button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <div class="modal" id="modal-programar-entrevista">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-calendar-alt"></i> Programar Entrevista</h2>
+          <button
+            class="btn-close"
+            onclick="cerrarModal('modal-programar-entrevista')"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="fecha-entrevista">
+              Fecha de Entrevista: <span class="campo-obligatorio">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              id="fecha-entrevista"
+              class="form-input"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="lugar-entrevista">
+              Lugar/Enlace: <span class="campo-obligatorio">*</span>
+            </label>
+            <input
+              type="text"
+              id="lugar-entrevista"
+              class="form-input"
+              placeholder="Ej: Sala de Juntas o Enlace de Meet"
+              required
+            />
+            <small class="form-help"
+              >Ingrese el lugar físico o enlace virtual de la entrevista</small
+            >
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            onclick="cerrarModal('modal-programar-entrevista')"
+          >
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button class="btn btn-success" id="btn-confirmar-programar">
+            <i class="fas fa-check"></i> Programar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal modal-large" id="modal-cambiar-estado">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>
+            <i class="fas fa-file-alt"></i> Gestionar Estado del Aspirante
+          </h2>
+          <button
+            class="btn-close"
+            onclick="cerrarModal('modal-cambiar-estado')"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="form-section">
+            <h3 class="section-title">
+              <i class="fas fa-toggle-on"></i> Decisión
+            </h3>
+
+            <div class="form-group">
+              <label for="nuevo-estado">
+                Nuevo Estado del Aspirante:
+                <span class="campo-obligatorio">*</span>
+              </label>
+              <select
+                id="nuevo-estado"
+                class="form-select"
+                onchange="toggleCamposHojaVida()"
+                required
+              >
+                <option value="">-- Seleccione una opción --</option>
+                <option value="Aprobado">Aprobado</option>
+                <option value="Rechazado">Rechazado</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3 class="section-title">
+              <i class="fas fa-user-graduate"></i> Información del Estudiante
+            </h3>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="estudiante-nombre">Nombre:</label>
+                <input
+                  type="text"
+                  id="estudiante-nombre"
+                  class="form-input"
+                  readonly
+                />
+              </div>
+              <div class="form-group">
+                <label for="estudiante-fecha-nacimiento"
+                  >Fecha de Nacimiento:</label
+                >
+                <input
+                  type="date"
+                  id="estudiante-fecha-nacimiento"
+                  class="form-input"
+                />
+              </div>
+            </div>
+
+            <div
+              id="campos-hoja-vida"
+              style="
+                display: none;
+                margin-top: 1rem;
+                padding: 1rem;
+                background-color: #f8f9fa;
+                border-radius: 8px;
+                border-left: 4px solid var(--primary-color);
+              "
+            >
+              <h4 style="margin-bottom: 1rem; color: #2c3e50">
+                Datos de Hoja de Vida (Requerido para Aprobación)
+              </h4>
+
+              <div class="form-group">
+                <label for="estudiante-alergias">
+                  Alergias: <span class="campo-obligatorio">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="estudiante-alergias"
+                  class="form-input"
+                  placeholder="Ej: Maní, Penicilina (o escriba 'Ninguna')"
+                />
+                <small class="form-help"
+                  >Separar múltiples alergias con comas. Si no tiene, escriba
+                  "Ninguna".</small
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="estudiante-enfermedades">
+                  Enfermedades: <span class="campo-obligatorio">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="estudiante-enfermedades"
+                  class="form-input"
+                  placeholder="Ej: Asma (o escriba 'Ninguna')"
+                />
+                <small class="form-help"
+                  >Separar múltiples enfermedades con comas. Si no tiene,
+                  escriba "Ninguna".</small
+                >
+              </div>
+
+              <div class="form-group">
+                <label for="estudiante-problemas-aprendizaje"
+                  >Problemas de Aprendizaje:</label
+                >
+                <textarea
+                  id="estudiante-problemas-aprendizaje"
+                  class="form-textarea"
+                  rows="3"
+                  placeholder="Describa cualquier problema de aprendizaje conocido"
+                ></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-section">
+            <h3 class="section-title">
+              <i class="fas fa-user-shield"></i> Información del Acudiente
+            </h3>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="acudiente-nombre">Nombre Acudiente:</label>
+                <input
+                  type="text"
+                  id="acudiente-nombre"
+                  class="form-input"
+                  readonly
+                />
+              </div>
+              <div class="form-group">
+                <label for="acudiente-telefono">Teléfono:</label>
+                <input type="tel" id="acudiente-telefono" class="form-input" />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            onclick="cerrarModal('modal-cambiar-estado')"
+          >
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button class="btn btn-success" id="btn-confirmar-cambiar-estado">
+            <i class="fas fa-save"></i> Guardar y Cambiar Estado
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="modal-mensaje">
+      <div class="modal-content modal-small">
+        <div class="modal-body text-center">
+          <i id="modal-mensaje-icono" class="modal-icon"></i>
+          <h3 id="modal-mensaje-titulo"></h3>
+          <p id="modal-mensaje-texto"></p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-primary"
+            onclick="cerrarModal('modal-mensaje')"
+          >
+            Aceptar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="sidebarCommon.js"></script>
+    <script src="gestionarPreinscripciones.js"></script>
+  </body>
+</html>

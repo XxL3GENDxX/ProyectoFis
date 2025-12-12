@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gestor de Usuarios</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="gestionarUsuarios.css" />
+  </head>
+
+  <body>
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+      <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="user-info">
+          <div class="user-avatar">
+            <i class="fas fa-user"></i>
+          </div>
+          <div class="user-name">Nombre Usuario</div>
+          <div class="user-role">Administrador</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-menu">
+        <a href="panelGestion.html" class="menu-item">
+          <i class="fas fa-home"></i>
+          <span>Inicio</span>
+        </a>
+        <a href="gestionarEstudiantes.html" class="menu-item">
+          <i class="fas fa-user-graduate"></i>
+          <span>Gestor estudiantes</span>
+        </a>
+        <a href="gestionarGrupos.html" class="menu-item">
+          <i class="fas fa-users"></i>
+          <span>Gestor de grupos</span>
+        </a>
+        <a href="gestionarLogros.html" class="menu-item">
+          <i class="fas fa-trophy"></i>
+          <span>Gestor de logros</span>
+        </a>
+        <a href="gestionarCalificaciones.html" class="menu-item active">
+          <i class="fas fa-star"></i>
+          <span>Gestor de calificaciones</span>
+        </a>
+        <a href="gestionarObservador.html" class="menu-item">
+          <i class="fas fa-eye"></i>
+          <span>Gestor de observador</span>
+        </a>
+        <a href="gestionarUsuarios.html" class="menu-item active">
+          <i class="fas fa-user-tie"></i>
+          <span>Gestor de usuarios</span>
+        </a>
+        <a href="gestionarPreinscripciones.html" class="menu-item">
+          <i class="fas fa-clipboard-list"></i>
+          <span>Gestor de preinscripciones</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="inicioSesion.html" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <div class="content-header">
+        <h1><i class="fas fa-user-cog"></i> Gestor de Usuarios</h1>
+        <nav class="breadcrumb">
+          <span>Inicio</span> <i class="fas fa-chevron-right"></i>
+          <span>Gestor de Usuarios</span>
+        </nav>
+      </div>
+
+      <div class="content-body">
+        <!-- Barra de búsqueda y botón crear -->
+        <section class="search-section">
+          <div class="search-bar">
+            <i class="fas fa-search search-icon"></i>
+            <input
+              type="text"
+              id="txt-buscar-usuario"
+              placeholder="Buscar por nombre, usuario o rol..."
+              class="search-input"
+            />
+          </div>
+
+          <button class="btn btn-primary" id="btn-crear-usuario">
+            <i class="fas fa-user-plus"></i> Crear nuevo usuario
+          </button>
+        </section>
+
+        <!-- Tabla de usuarios -->
+        <section class="table-section">
+          <div class="table-header">
+            <h2>Lista de Usuarios</h2>
+          </div>
+
+          <!-- Loading spinner -->
+          <div class="loading-spinner" id="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Cargando usuarios...</p>
+          </div>
+
+          <!-- Tabla -->
+          <div
+            class="table-responsive"
+            id="tabla-container"
+            style="display: none"
+          >
+            <table class="data-table" id="tabla-usuarios">
+              <thead>
+                <tr>
+                  <th>Nombre Completo</th>
+                  <th>Usuario</th>
+                  <th>Estado</th>
+                  <th>Rol</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-usuarios">
+                <!-- Los usuarios se cargarán dinámicamente -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Estado vacío -->
+          <div class="empty-state" id="empty-state" style="display: none">
+            <i class="fas fa-user-tie empty-icon"></i>
+            <h3>No hay usuarios registrados</h3>
+            <p>Comience agregando usuarios al sistema</p>
+          </div>
+
+          <!-- Error state -->
+          <div class="error-state" id="error-state" style="display: none">
+            <i class="fas fa-exclamation-triangle error-icon"></i>
+            <h3>Error en la base de datos</h3>
+            <p>
+              No se pudieron cargar los usuarios. Por favor, intente nuevamente.
+            </p>
+            <button class="btn btn-primary" onclick="cargarUsuarios()">
+              <i class="fas fa-redo"></i> Reintentar
+            </button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Modal para crear nuevo usuario -->
+    <div class="modal" id="modal-crear-usuario">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2><i class="fas fa-user-plus"></i> Crear Nuevo Usuario</h2>
+          <button
+            class="close-btn"
+            onclick="cerrarModal('modal-crear-usuario')"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="form-crear-usuario" onsubmit="event.preventDefault();" class="modern-form">
+            
+            <!-- 1. Rol Selection -->
+            <div class="form-section">
+              <label for="sel-rol-crear" class="section-label">Tipo de Usuario</label>
+              <div class="input-group-modern">
+                <i class="fas fa-user-tag input-icon-modern"></i>
+                <select id="sel-rol-crear" class="form-control-modern">
+                  <option value="">Seleccione un rol...</option>
+                  <option value="Acudiente">Acudiente</option>
+                  <option value="Administrador">Administrador</option>
+                  <option value="Profesor">Profesor</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 2. Documento (Conditional) -->
+            <div class="form-section animated-section" id="grupo-documento" style="display:none;">
+              <div class="input-group-modern">
+                <i class="fas fa-id-card input-icon-modern"></i>
+                <input
+                  type="text"
+                  id="txt-documento-crear"
+                  class="form-control-modern"
+                  placeholder=" "
+                  required
+                />
+                <label for="txt-documento-crear" class="floating-label">Documento de Identidad</label>
+              </div>
+              <small id="help-documento" class="help-text-modern"></small>
+            </div>
+
+            <!-- 3. Datos Personales (Grid Layout) -->
+            <div id="datos-persona-extra" class="form-section animated-section" style="display: none;">
+                 <h4 class="subsection-header">
+                    <i class="fas fa-address-card"></i> Datos Personales
+                 </h4>
+                 
+                 <div class="form-grid-2">
+                     <div class="input-group-modern">
+                        <i class="fas fa-font input-icon-modern"></i>
+                        <input type="text" id="txt-nombre-crear" class="form-control-modern" placeholder=" " />
+                        <label for="txt-nombre-crear" class="floating-label">Nombres</label>
+                     </div>
+                     
+                     <div class="input-group-modern">
+                        <i class="fas fa-font input-icon-modern"></i>
+                        <input type="text" id="txt-apellido-crear" class="form-control-modern" placeholder=" " />
+                        <label for="txt-apellido-crear" class="floating-label">Apellidos</label>
+                     </div>
+                     
+                     <div class="input-group-modern">
+                        <i class="fas fa-calendar-alt input-icon-modern"></i>
+                        <input type="date" id="txt-fecha-nacimiento-crear" class="form-control-modern" placeholder=" " />
+                        <label for="txt-fecha-nacimiento-crear" class="floating-label always-active">Fecha de Nacimiento</label>
+                     </div>
+                     
+                     <div class="input-group-modern">
+                        <i class="fas fa-venus-mars input-icon-modern"></i>
+                        <select id="sel-genero-crear" class="form-control-modern p-left-icon">
+                             <option value="">Seleccione Género...</option>
+                             <option value="Masculino">Masculino</option>
+                             <option value="Femenino">Femenino</option>
+                        </select>
+                     </div>
+                 </div>
+            </div>
+
+            <!-- 4. Datos de Cuenta (Grid Layout) -->
+            <div id="campos-usuario-crear" class="form-section animated-section" style="display:none;">
+                <h4 class="subsection-header">
+                    <i class="fas fa-user-shield"></i> Datos de Acceso
+                 </h4>
+                 
+                <div class="form-grid-2">
+                    <div class="input-group-modern">
+                        <i class="fas fa-user input-icon-modern"></i>
+                        <input
+                          type="text"
+                          id="txt-usuario-crear"
+                          class="form-control-modern"
+                          placeholder=" "
+                          required
+                        />
+                        <label for="txt-usuario-crear" class="floating-label">Usuario</label>
+                    </div>
+
+                    <div class="input-group-modern">
+                        <i class="fas fa-lock input-icon-modern"></i>
+                        <input
+                          type="password"
+                          id="txt-password-crear"
+                          class="form-control-modern"
+                          placeholder=" "
+                          required
+                        />
+                        <label for="txt-password-crear" class="floating-label">Contraseña</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-note-modern">
+              <i class="fas fa-info-circle"></i>
+              Todos los campos son obligatorios para el registro correcto.
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            onclick="cerrarModal('modal-crear-usuario')"
+          >
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button class="btn btn-primary" id="btn-confirmar-crear">
+            <i class="fas fa-save"></i> Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Modal para editar usuario -->
+    <div class="modal" id="modal-editar-usuario">
+      <div class="modal-content modal-medium">
+        <div class="modal-header">
+          <h2><i class="fas fa-edit"></i> Editar Usuario</h2>
+        </div>
+        <div class="modal-body">
+          <form id="form-editar-usuario" onsubmit="return false;">
+            <div class="form-group">
+              <label for="editar-nombre-usuario">
+                Nombre de Usuario <span class="campo-obligatorio">*</span>
+              </label>
+              <input
+                type="text"
+                id="editar-nombre-usuario"
+                class="form-input"
+                placeholder="Ingrese el nombre de usuario"
+                required
+                maxlength="50"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="editar-contrasena"> Contraseña </label>
+              <input
+                type="password"
+                id="editar-contrasena"
+                class="form-input"
+                placeholder="Dejar en blanco para no cambiar"
+              />
+              <small class="form-help">Dejar en blanco para no cambiar</small>
+            </div>
+
+            <div class="form-group">
+              <label for="editar-rol">
+                Rol <span class="campo-obligatorio">*</span>
+              </label>
+              <select id="editar-rol" class="form-select" required>
+                <option value="">Seleccione un rol</option>
+                <option value="Administrador">Administrador</option>
+                <option value="Acudiente">Acudiente</option>
+                <option value="Profesor">Profesor</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="editar-estado">
+                Estado <span class="campo-obligatorio">*</span>
+              </label>
+              <select id="editar-estado" class="form-select" required>
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+              </select>
+            </div>
+
+            <div class="form-note">
+              <i class="fas fa-info-circle"></i>
+              Los campos marcados con
+              <span class="campo-obligatorio">*</span> son obligatorios
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            onclick="cerrarModal('modal-editar-usuario')"
+          >
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button class="btn btn-primary" id="btn-confirmar-editar">
+            <i class="fas fa-save"></i> Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal para mensaje de éxito/error/advertencia -->
+    <div class="modal" id="modal-mensaje">
+      <div class="modal-content modal-small">
+        <div class="modal-body text-center">
+          <i id="modal-mensaje-icono" class="modal-icon"></i>
+          <h3 id="modal-mensaje-titulo"></h3>
+          <p id="modal-mensaje-texto"></p>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-primary"
+            onclick="cerrarModal('modal-mensaje')"
+          >
+            Aceptar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="sidebarCommon.js"></script>
+    <script src="gestionarUsuarios.js"></script>
+  </body>
+</html>

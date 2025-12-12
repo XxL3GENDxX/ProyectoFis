@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de Gestión</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="panelGestion.css" />
+</head>
+
+<body>
+  <!-- Mobile Toggle Button -->
+  <button class="mobile-toggle" onclick="toggleSidebar()">
+    <i class="fas fa-bars"></i>
+  </button>
+
+  <!-- Overlay -->
+  <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="user-info">
+        <div class="user-avatar">
+          <i class="fas fa-user"></i>
+        </div>
+        <div class="user-name">Nombre Usuario</div>
+        <div class="user-role">Administrador</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-menu">
+      <a href="#" class="menu-item active">
+        <i class="fas fa-home"></i>
+        <span>Inicio</span>
+      </a>
+      <a href="gestionarEstudiantes.html" class="menu-item">
+        <i class="fas fa-user-graduate"></i>
+        <span>Gestor estudiantes</span>
+      </a>
+      <a href="gestionarGrupos.html" class="menu-item">
+        <i class="fas fa-users"></i>
+        <span>Gestor de grupos</span>
+      </a>
+      <a href="gestionarLogros.html" class="menu-item">
+        <i class="fas fa-trophy"></i>
+        <span>Gestor de logros</span>
+      </a>
+      <a href="gestionarCalificaciones.html" class="menu-item active">
+        <i class="fas fa-star"></i>
+        <span>Gestor de calificaciones</span>
+      </a>
+      <a href="gestionarObservador.html" class="menu-item">
+        <i class="fas fa-eye"></i>
+        <span>Gestor de observador</span>
+      </a>
+      <a href="gestionarUsuarios.html" class="menu-item">
+        <i class="fas fa-user-tie"></i>
+        <span>Gestor de usuarios</span>
+      </a>
+      <a href="gestionarPreinscripciones.html" class="menu-item">
+        <i class="fas fa-clipboard-list"></i>
+        <span>Gestor de preinscripciones</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="inicioSesion.html" class="logout-btn">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>Cerrar Sesión</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="content-header">
+      <h1>Bienvenido al Panel de Gestión</h1>
+      <p>Selecciona una opción del menú de la izquierda para comenzar</p>
+    </div>
+
+    <div class="content-body">
+      <div class="welcome-section">
+        <h2>Panel de Control</h2>
+        <p>Administra todos los módulos del sistema desde este panel</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="panelGestion.js"></script>
+</body>
+
+</html>

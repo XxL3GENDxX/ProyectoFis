@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Estudiantes</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="gestionarEstudiantes.css">
+</head>
+
+<body>
+    <!-- Mobile Toggle Button -->
+    <button class="mobile-toggle" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Overlay -->
+    <div class="overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="user-name">Nombre Usuario</div>
+                <div class="user-role">Administrador</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-menu">
+            <a href="panelGestion.html" class="menu-item">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="gestionarEstudiantes.html" class="menu-item active">
+                <i class="fas fa-user-graduate"></i>
+                <span>Gestor estudiantes</span>
+            </a>
+            <a href="gestionarGrupos.html" class="menu-item">
+                <i class="fas fa-users"></i>
+                <span>Gestor de grupos</span>
+            </a>
+            <a href="gestionarLogros.html" class="menu-item">
+                <i class="fas fa-trophy"></i>
+                <span>Gestor de logros</span>
+            </a>
+            <a href="gestionarCalificaciones.html" class="menu-item active">
+                <i class="fas fa-star"></i>
+                <span>Gestor de calificaciones</span>
+            </a>
+            <a href="gestionarObservador.html" class="menu-item">
+                <i class="fas fa-eye"></i>
+                <span>Gestor de observador</span>
+            </a>
+            <a href="gestionarUsuarios.html" class="menu-item">
+                <i class="fas fa-user-tie"></i>
+                <span>Gestor de usuarios</span>
+            </a>
+            <a href="gestionarPreinscripciones.html" class="menu-item">
+                <i class="fas fa-clipboard-list"></i>
+                <span>Gestor de preinscripciones</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="inicioSesion.html" class="logout-btn">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Cerrar Sesión</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="content-header">
+            <h1><i class="fas fa-graduation-cap"></i> Gestión de Estudiantes</h1>
+            <nav class="breadcrumb">
+                <span>Inicio</span> <i class="fas fa-chevron-right"></i> <span>Gestión de Estudiantes</span>
+            </nav>
+        </div>
+
+        <div class="content-body">
+            <!-- Barra de búsqueda y filtros -->
+            <section class="search-section">
+                <div class="search-bar">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="txt-buscar-estudiante"
+                        placeholder="Buscar estudiante por nombre, apellido o documento..." class="search-input">
+                </div>
+
+                <div class="filter-container">
+                    <button class="btn btn-filter" id="btn-toggle-filtros">
+                        <i class="fas fa-filter"></i> Filtros
+                    </button>
+                    <button class="btn btn-gestionar-grupo" id="btn-gestionar-grupo-mode">
+                        <i class="fas fa-users"></i> Gestionar Grupos
+                    </button>
+                </div>
+            </section>
+
+            <!-- Panel de filtros avanzados -->
+            <section class="advanced-filters" id="panel-filtros" style="display: none;">
+                <h3><i class="fas fa-sliders-h"></i> Filtros Avanzados</h3>
+                <div class="filter-grid">
+                    <div class="filter-item">
+                        <label for="filtro-genero">Género</label>
+                        <select id="filtro-genero" class="filter-select">
+                            <option value="">Todos</option>
+                            <option value="Masculino">Masculino</option>
+                            <option value="Femenino">Femenino</option>
+                            <option value="Otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="filter-item">
+                        <label for="filtro-edad-min">Edad Mínima</label>
+                        <input type="number" id="filtro-edad-min" class="filter-input" min="0" max="100">
+                    </div>
+                    <div class="filter-item">
+                        <label for="filtro-edad-max">Edad Máxima</label>
+                        <input type="number" id="filtro-edad-max" class="filter-input" min="0" max="100">
+                    </div>
+                    <div class="filter-item">
+                        <label for="filtro-orden">Orden Alfabético</label>
+                        <select id="filtro-orden" class="filter-select">
+                            <option value="true">Sí</option>
+                            <option value="false">No</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn btn-primary" id="btn-aplicar-filtros">
+                        <i class="fas fa-check"></i> Aplicar Filtros
+                    </button>
+                    <button class="btn btn-secondary" id="btn-limpiar-filtros">
+                        <i class="fas fa-times"></i> Limpiar
+                    </button>
+                </div>
+            </section>
+
+            <!-- Tabla de estudiantes -->
+            <section class="table-section">
+                <div class="table-header">
+                    <h2>Lista de Estudiantes</h2>
+                    <div id="modo-gestion-info" style="display: none;">
+                        <span class="badge badge-warning">
+                            <i class="fas fa-info-circle"></i> Modo Gestión de Grupos Activo
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Loading spinner -->
+                <div class="loading-spinner" id="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Cargando estudiantes...</p>
+                </div>
+
+                <!-- Tabla -->
+                <div class="table-responsive" id="tabla-container" style="display: none;">
+                    <table class="data-table" id="tabla-estudiantes">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Apellido</th>
+                                <th>Grado</th>
+                                <th>Grupo</th>
+                                <th>Estado</th>
+                                <th id="th-opciones">Opciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-estudiantes">
+                            <!-- Los estudiantes se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Estado vacío -->
+                <div class="empty-state" id="empty-state" style="display: none;">
+                    <i class="fas fa-user-graduate empty-icon"></i>
+                    <h3>No hay estudiantes registrados</h3>
+                    <p>Comience agregando estudiantes al sistema</p>
+                </div>
+
+                <!-- Error state -->
+                <div class="error-state" id="error-state" style="display: none;">
+                    <i class="fas fa-exclamation-triangle error-icon"></i>
+                    <h3>Error en la base de datos</h3>
+                    <p>No se pudieron cargar los estudiantes. Por favor, intente nuevamente.</p>
+                    <button class="btn btn-primary" onclick="cargarEstudiantes()">
+                        <i class="fas fa-redo"></i> Reintentar
+                    </button>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modal para asignar estudiante a grupo -->
+    <div class="modal" id="modal-asignar-grupo">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user-plus"></i> Asignar Estudiante a Grupo</h2>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="select-grado-asignar">Grado</label>
+                    <select id="select-grado-asignar" class="filter-select">
+                        <option value="">Seleccione un grado</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="select-grupo-asignar">Grupo</label>
+                    <select id="select-grupo-asignar" class="filter-select">
+                        <option value="">Primero seleccione un grado</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-asignar-grupo')">Cancelar</button>
+                <button class="btn btn-success" id="btn-confirmar-asignar">
+                    <i class="fas fa-check"></i> Asignar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmar desvinculación -->
+    <div class="modal" id="modal-desvincular">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-question-circle"></i> Confirmar Desvinculación</h2>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea desvincular al estudiante <strong
+                        id="nombre-estudiante-desvincular"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-desvincular')">Cancelar</button>
+                <button class="btn btn-danger" id="btn-confirmar-desvincular">
+                    <i class="fas fa-unlink"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para modificar estudiante -->
+    <div class="modal" id="modal-modificar-estudiante">
+        <div class="modal-content modal-medium">
+            <div class="modal-header">
+                <h2><i class="fas fa-edit"></i> Modificar Estudiante</h2>
+            </div>
+            <div class="modal-body">
+                <form id="form-modificar-estudiante" onsubmit="return false;">
+                    <div class="form-group">
+                        <label for="modificar-nombre">
+                            Nombre <span class="campo-obligatorio">*</span>
+                        </label>
+                        <input type="text" id="modificar-nombre" class="form-input" placeholder="Ingrese el nombre"
+                            required maxlength="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modificar-apellido">
+                            Apellido <span class="campo-obligatorio">*</span>
+                        </label>
+                        <input type="text" id="modificar-apellido" class="form-input" placeholder="Ingrese el apellido"
+                            required maxlength="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modificar-documento">
+                            Documento <span class="campo-obligatorio">*</span>
+                        </label>
+                        <input type="text" id="modificar-documento" class="form-input"
+                            placeholder="Ingrese el número de documento" required pattern="[0-9]{6,20}"
+                            title="El documento debe contener entre 6 y 20 dígitos" maxlength="20">
+                        <small class="form-help">Solo números, entre 6 y 20 dígitos</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="modificar-fecha-nacimiento">
+                            Fecha de Nacimiento
+                        </label>
+                        <input type="date" id="modificar-fecha-nacimiento" class="form-input">
+                        <small class="form-help">Formato: DD/MM/AAAA</small>
+                    </div>
+
+                    <div class="form-note">
+                        <i class="fas fa-info-circle"></i>
+                        Los campos marcados con <span class="campo-obligatorio">*</span> son obligatorios
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cerrarModal('modal-modificar-estudiante')">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button class="btn btn-primary" id="btn-confirmar-modificar">
+                    <i class="fas fa-save"></i> Modificar estudiante
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para confirmar cambio de estado -->
+    <div class="modal" id="modal-confirmar-cambio-estado">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-question-circle"></i> Confirmar Cambio de Estado</h2>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro que desea cambiar el estado del estudiante <strong
+                        id="nombre-estudiante-estado"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="cancelarCambioEstado()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmarCambioEstado()">
+                    <i class="fas fa-check"></i> Confirmar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para mensaje de éxito/error/advertencia -->
+    <div class="modal" id="modal-mensaje">
+        <div class="modal-content modal-small">
+            <div class="modal-body text-center">
+                <i id="modal-mensaje-icono" class="modal-icon"></i>
+                <h3 id="modal-mensaje-titulo"></h3>
+                <p id="modal-mensaje-texto"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="cerrarModal('modal-mensaje')">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="sidebarCommon.js"></script>
+    <script src="gestionarEstudiantes.js"></script>
+</body>
+
+</html>
